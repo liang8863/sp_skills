@@ -1,0 +1,4 @@
+interface:
+  display_name: "Monorepo Management"
+  short_description: "Monorepo 跨專案同步管理。當修改 bridge、ext-module、template 等共用模組時， 提醒同步更新到各遊戲專案。也涵蓋 submodule 日常操作。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

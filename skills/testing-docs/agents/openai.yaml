@@ -1,0 +1,4 @@
+interface:
+  display_name: "Testing Docs"
+  short_description: "測試與文檔專家。當需要單元測試設計、集成測試、API 文檔撰寫、 使用指南編寫時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

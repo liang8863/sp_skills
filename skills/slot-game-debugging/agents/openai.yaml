@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slot Game Debugging"
+  short_description: "Slot 遊戲客戶端與後端資料問題排查流程。用於 spin/cascade/lastSpin、reelLayout/rl、 elimination、長圖標/合併圖標、倍率、轉..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

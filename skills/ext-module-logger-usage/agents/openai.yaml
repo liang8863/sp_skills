@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ext Module Logger Usage"
+  short_description: "[slot-game-ext-module] Logger 使用規範。在 ExternalModules 中寫日誌、調試、 選擇日誌級別時使用。禁止使用 console.log。"
+  default_prompt: "Use $name for this Slot FE Client task."

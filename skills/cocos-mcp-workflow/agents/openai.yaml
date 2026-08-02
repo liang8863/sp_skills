@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cocos MCP Workflow"
+  short_description: "Validate Funplay Cocos MCP, logs, runtime state, and screenshots."
+  default_prompt: "Use the Cocos MCP workflow to validate the Funplay Cocos MCP connection, inspect Cocos logs, scene state, resources, run preview flows, and capture screenshot evidence safely."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Doc Man Agent"
+  short_description: "競品觀察、資源比對與需求文檔產出"
+  default_prompt: "Use $doc-man-agent to analyze competitor behavior and produce a requirement document with acceptance criteria."

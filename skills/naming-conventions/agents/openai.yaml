@@ -1,0 +1,4 @@
+interface:
+  display_name: "Naming Conventions"
+  short_description: "Slot 遊戲平台的命名規則。當建立新檔案、新類別、新介面、新變量、新事件、 code review、或任何涉及命名決策時使用。涵蓋文件、目錄、類、接口、方法、 變量、常量、..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

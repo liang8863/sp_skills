@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dynamic Loading"
+  short_description: "動態載入專家。當需要 ExternalModules 載入機制、版本管理、 bootstrap 流程設計、部署策略規劃時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

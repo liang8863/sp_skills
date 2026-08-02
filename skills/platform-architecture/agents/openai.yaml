@@ -1,0 +1,4 @@
+interface:
+  display_name: "Platform Architecture"
+  short_description: "Slot 遊戲平台整體架構設計。當討論架構、模組關係、分層設計、 跨專案設計決策、新功能如何融入架構時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

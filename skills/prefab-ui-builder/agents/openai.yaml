@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prefab Ui Builder"
+  short_description: "Prefab UI 建置工作流。當用戶要求在 prefab 中新增或修改 UI（節點、組件、圖片、按鈕等）時使用。 涵蓋需求分析、模板查找/建構、一次性腳本生成、執行驗證、模..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

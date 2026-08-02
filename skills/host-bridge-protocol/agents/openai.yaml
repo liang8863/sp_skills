@@ -1,0 +1,4 @@
+interface:
+  display_name: "Host Bridge Protocol"
+  short_description: "Host 頁面通訊協議。當處理 iframe 通訊、token 管理、語言設置、 彈窗互動、HostBridge 相關開發時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Services Expert"
+  short_description: "Services 設計與實現專家。當需要 InversifyJS 容器配置、Service 實作、 依賴管理、接口設計、ServiceBridge 整合時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

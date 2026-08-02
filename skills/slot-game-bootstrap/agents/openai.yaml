@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slot Game Bootstrap"
+  short_description: "Slot 遊戲的 Bootstrap 初始化流程。當建立新遊戲、修改啟動流程、 調試初始化順序問題、設置自定義服務配置時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

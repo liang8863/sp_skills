@@ -1,0 +1,4 @@
+interface:
+  display_name: "Requirement Workflow"
+  short_description: "需求处理工作流。当用户提出非琐碎的开发需求时，自动引导走标准流程： 需求厘清 → 认知同步 → 制定计划 → 确认后实作。 避免因理解偏差导致返工。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

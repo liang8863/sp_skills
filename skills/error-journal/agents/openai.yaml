@@ -1,0 +1,4 @@
+interface:
+  display_name: "Error Journal"
+  short_description: "錯誤日記系統。當開發中遇到非顯而易見的錯誤或踩坑時自動記錄到 .codex/errors.md； 當要做 Bootstrap 初始化、API 整合、新遊戲建立、Contai..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

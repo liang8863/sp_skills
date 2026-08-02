@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review Workflow"
+  short_description: "Migrated Claude /code-review workflow. Use when the user asks for code review, file rev..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

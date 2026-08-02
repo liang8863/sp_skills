@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cocos 2.x Resource Repair"
+  short_description: "Fix migrated Cocos 2.x prefab and VFX parity."
+  default_prompt: "Use this skill to diagnose and repair migrated Cocos 2.x resource issues in a Cocos 3.x project, preserving meta UUIDs and validating runtime parity."

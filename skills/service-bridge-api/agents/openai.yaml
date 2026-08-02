@@ -1,0 +1,4 @@
+interface:
+  display_name: "Service Bridge Api"
+  short_description: "ServiceBridge 完整 API 參考。當使用 ServiceBridge 呼叫服務、查詢可用方法、 寫遊戲代碼存取 ExternalModules 服務時使用。包含..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

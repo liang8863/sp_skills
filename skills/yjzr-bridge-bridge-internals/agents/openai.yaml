@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yjzr Bridge Bridge Internals"
+  short_description: "[games/yjzr/assets/scripts/bridge] Bridge 層內部開發。修改 Loader、EventBridge、HostBridge 內部實現、..."
+  default_prompt: "Use $name for this Slot FE Client task."

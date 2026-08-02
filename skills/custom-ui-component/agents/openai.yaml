@@ -1,0 +1,4 @@
+interface:
+  display_name: "Custom Ui Component"
+  short_description: "自定義 UI 組件的開發模式。當建立新的 Loading、Toast、Dialog、 GamePanel 等自定義組件，或修改現有自定義組件時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

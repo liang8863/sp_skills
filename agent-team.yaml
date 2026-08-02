@@ -1,0 +1,208 @@
+version: "1"
+name: "slot-fe-client-agent-team"
+project_scope: "Slot FE Client Cocos Creator 3.8.7 games"
+workflow_document: ".codex/references/agent-collaboration-workflow.md"
+agents_index: ".codex/agents/team.yaml"
+concepts_document: ".codex/references/workflow-concepts.md"
+
+common_directories:
+  codex_config: "E:\\CCCCCC\\slot-fe-client\\.codex"
+  output_docs: "E:\\CCCCCC\\slot-fe-client\\docs"
+  resource_project: "E:\\CCCCCC\\UIProj\\387Proj\\NewProject"
+  project_root: "E:\\CCCCCC\\slot-fe-client"
+  games_root: "E:\\CCCCCC\\slot-fe-client\\games"
+
+mcp_ports:
+  yjzr: 30001
+  yjzr-01: 30002
+  yjzr-02: 30003
+  rule: "yjzr starts at 30001; yjzr-01 starts at 30002 and increments by suffix."
+
+principles:
+  - "PM is the only user-facing coordinator."
+  - "Doc and asset analysis must happen before non-trivial Cocos implementation."
+  - "Cocos implementation must be gated by confirmed resources and acceptance criteria."
+  - "QA validates against the requirement document, not personal interpretation."
+  - "Every phase should leave evidence: documents, screenshots, logs, code paths, or MCP state."
+
+invocation_protocol:
+  weak_mention: "Plain @pm-agent loads the PM role/rules only; it may not start a full autonomous loop."
+  full_workflow_phrases:
+    - "@pm-agent 启动 工作流"
+    - "@pm-agent 工作流"
+    - "@pm-agent 启动完整 agent 工作流"
+    - "调度各 agent 修复"
+    - "按 PM 工作流跑到 QA 通过"
+  effect: "Treat full workflow phrasing as user authorization to coordinate doc, asset, cocos, qa, and git agents where relevant."
+  persistence_rule: "Do not stop at a plan, first-pass analysis, or single failed node. Continue until QA passes, the user accepts a downgrade, or a real blocker is reported with evidence and recovery steps."
+  fallback_if_no_subagent_tool: "Run the same role sequence in the main session and label each phase; do not stop just because sub-agent spawn is unavailable."
+
+workflow_defaults:
+  source_of_truth: ".codex/agent-team.yaml"
+  minimal_invocation_examples:
+    - "@pm-agent 启动 工作流：修复 xxx 问题"
+    - "@pm-agent 工作流 修复 xxx 问题"
+  field_resolution_rule: "User-provided fields override defaults. Missing project, references, deliverables, dispatch agents, and stop conditions are filled from workflow_defaults."
+  default_project:
+    game: "games/yjzr"
+    absolute_path: "E:\\CCCCCC\\slot-fe-client\\games\\yjzr"
+    mcp_project_key: "yjzr"
+    mcp_port: 30001
+  allowed_dispatch_agents:
+    - "doc-man-agent"
+    - "asset-man-agent"
+    - "cocos-man-agent"
+    - "qa-man-agent"
+    - "git-agent"
+  reference_materials:
+    project_basic_info: "E:\\CCCCCC\\slot-fe-client\\docs\\project-basic-info.md"
+    competitor_url: 'https://m.eajzzxhro.com/1702123/index.html?ot=ca7094186b309ee149c55c8822e7ecf2&l=zh&btt=2&or=21novodx%3Dzveuuscmj%3Dxjh&__hv=2fMEQCICuqoNGFMML4fGBdQE%2BkWN6hW4%2FfORGq%2Fnk1ZEMnawwmAiAxGYxJjOCWQZyBSVILpJeMljpfcPHLJNuUZN5itlB12A%3D%3D&__sv=010401YytG6oT6vOl81kKt_NDwR6QjynyruQC7y9kpWiV7QEg'
+    resource_project: "E:\\CCCCCC\\UIProj\\387Proj\\NewProject"
+    effect_docs_hint: "Prefer the target game's doc directory and E:\\CCCCCC\\slot-fe-client\\docs for generated comparison documents."
+  expected_delivery:
+    - "code/resource/prefab changes for the target game"
+    - "PM task card and updated requirement notes when useful"
+    - "Cocos developer self-test evidence"
+    - "MCP validation screenshots/logs/runtime evidence when available"
+    - "QA pass/fail conclusion with reproducible bug report on fail"
+  default_stop_conditions:
+    - "QA passes with evidence"
+    - "User explicitly accepts downgrade, delay, or documentation-only output"
+    - "A real blocker is reported with evidence, required input, and recovery steps"
+
+model_aliases:
+  gpt5.5: "gpt-5.5"
+  gpt5.4: "gpt-5.4"
+
+failure_fallbacks:
+  qa_not_pass:
+    trigger: "qa-man-agent returns fail/not-pass or files a bug report."
+    route:
+      - "qa submits bug report and evidence to PM"
+      - "PM dispatches doc-man-agent to refine requirements and acceptance criteria using the bug report"
+      - "PM re-gates the updated requirement and resource state"
+      - "PM dispatches cocos-man-agent for the next development pass"
+      - "QA validates again after cocos-man-agent self-test"
+
+  cocos_not_pass:
+    trigger: "cocos-man-agent cannot complete implementation or self-test fails."
+    route:
+      - "cocos-man-agent reports blocker/failure evidence to PM"
+      - "PM identifies whether the gap is requirement, resource, or implementation support"
+      - "PM dispatches doc-man-agent and/or asset-man-agent to refine requirement or provide resources"
+      - "PM re-gates and dispatches cocos-man-agent for the next development pass"
+      - "QA validates after cocos-man-agent completes self-test"
+
+mcp_validation:
+  skill: "cocos-mcp-workflow"
+  rule: "Verify the active Cocos project identity before trusting editor, scene, runtime, or console state."
+  required_evidence:
+    - "projectName and projectPath from MCP project info or equivalent direct MCP check"
+    - "active scene/editor state before runtime inspection"
+    - "console/log status when validating Cocos implementation or QA results"
+
+agents:
+  pm:
+    agent_config: ".codex/agents/pm-agent/AGENT.md"
+    skill: "pm-agent"
+    model: "gpt5.5"
+    owns:
+      - "user intake"
+      - "task cards"
+      - "phase gates"
+      - "conflict resolution"
+      - "final delivery summary"
+    dispatches_to:
+      - "doc"
+      - "asset"
+      - "cocos"
+      - "qa"
+      - "git"
+    companion_skills:
+      - "requirement-workflow"
+      - "slot-fe-client-workflow"
+
+  git:
+    agent_config: ".codex/agents/git-agent/AGENT.md"
+    skill: "git-agent"
+    model: "gpt5.5"
+    owns:
+      - "Git modification operations"
+      - "branch and worktree safety"
+      - "rebase and merge workflows"
+      - "staging and commit creation"
+      - "tag and push safety"
+    invocation_rule: "Route Git modification operations to git-agent; keep simple read-only Git checks in the fastest safe path."
+    companion_skills:
+      - "slot-fe-client-workflow"
+
+  doc:
+    agent_config: ".codex/agents/doc-man-agent/AGENT.md"
+    skill: "doc-man-agent"
+    model: "gpt5.5"
+    owns:
+      - "competitor observation"
+      - "resource-project comparison"
+      - "requirement document"
+      - "acceptance criteria"
+    companion_skills:
+      - "testing-docs"
+      - "slot-game-debugging"
+      - "cocos-mcp-workflow"
+
+  asset:
+    agent_config: ".codex/agents/asset-man-agent/AGENT.md"
+    skill: "asset-man-agent"
+    model: "gpt5.4"
+    owns:
+      - "resource project inspection"
+      - "prefab/material/shader/spine/atlas/audio inventory"
+      - "old code flow tracing"
+      - "missing resource list"
+    companion_skills:
+      - "prefab-scene-json"
+      - "prefab-ui-builder"
+      - "naming-conventions"
+      - "cocos-mcp-workflow"
+
+  cocos:
+    agent_config: ".codex/agents/cocos-man-agent/AGENT.md"
+    skill: "cocos-man-agent"
+    model: "gpt5.5"
+    owns:
+      - "Cocos Creator 3.8.7 implementation"
+      - "Cocos export/import resource integration"
+      - "prefab/scene/code wiring"
+      - "developer self-test evidence"
+    companion_skills:
+      - "cocos-expert"
+      - "cocos-mcp-workflow"
+      - "prefab-scene-json"
+      - "prefab-ui-builder"
+      - "slot-reel-system"
+      - "slot-game-debugging"
+      - "code-style"
+
+  qa:
+    agent_config: ".codex/agents/qa-man-agent/AGENT.md"
+    skill: "qa-man-agent"
+    model: "gpt5.4"
+    owns:
+      - "MCP runtime verification"
+      - "requirement-based acceptance"
+      - "screenshot/log evidence"
+      - "pass/fail report"
+    companion_skills:
+      - "cocos-mcp-workflow"
+      - "slot-game-debugging"
+      - "testing-docs"
+      - "code-review-workflow"
+
+handoff_order:
+  - "pm"
+  - "doc"
+  - "asset"
+  - "pm"
+  - "cocos"
+  - "qa"
+  - "pm"

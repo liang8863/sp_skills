@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Style"
+  short_description: "TypeScript 代碼風格、錯誤處理、事件使用、注入模式、Cocos 組件引用的最佳實踐。 code review、寫新程式碼、重構時自動參考。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

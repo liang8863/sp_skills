@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slot Specialist"
+  short_description: "Slot 遊戲邏輯專家。當需要轉輪系統、中獎判定、cascade 消除、 免費旋轉、特殊模式、GameService hooks 客製化時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

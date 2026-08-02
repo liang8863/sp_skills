@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architect"
+  short_description: "軟體架構設計專家。當需要系統架構分析、層級結構設計、模組關係規劃、 跨專案設計決策、可擴展性評估時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

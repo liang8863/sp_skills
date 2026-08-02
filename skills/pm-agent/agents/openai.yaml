@@ -1,0 +1,4 @@
+interface:
+  display_name: "PM Agent"
+  short_description: "Slot 多 Agent 協調入口與交付把關"
+  default_prompt: "Use $pm-agent to coordinate a Slot restoration task from user request through QA delivery."

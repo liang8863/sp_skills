@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ext Module Ext Module Dev"
+  short_description: "[slot-game-ext-module] ExternalModules 開發指南。新增 Service、修改現有模組、打包部署、 Container 綁定、Rollup..."
+  default_prompt: "Use $name for this Slot FE Client task."

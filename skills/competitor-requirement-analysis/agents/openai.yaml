@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Competitor Requirement Analysis"
+  short_description: "Long-spin slot competitor UI reverse analysis"
+  default_prompt: "Use $competitor-requirement-analysis to analyze a slot competitor URL with UI reverse-engineering evidence and write Chinese requirement docs."

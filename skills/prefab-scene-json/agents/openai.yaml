@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prefab Scene Json"
+  short_description: "Cocos Creator Prefab/Scene JSON 操作指南與 Python 工具庫。當需要用腳本在 prefab/scene 的 JSON 中新增節點、掛載內建..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

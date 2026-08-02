@@ -1,0 +1,4 @@
+interface:
+  display_name: "Template New Game Setup"
+  short_description: "[games/slot-game-template] 從模板建立新 Slot 遊戲的完整流程。當建立新遊戲專案、 設置初始配置、搭建遊戲骨架時使用。"
+  default_prompt: "Use $name for this Slot FE Client task."

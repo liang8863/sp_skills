@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cocos Man Agent"
+  short_description: "Cocos 實作、資源導入與自測交付"
+  default_prompt: "Use $cocos-man-agent to implement approved Cocos Creator Slot work with resource import and MCP self-test evidence."

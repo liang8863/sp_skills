@@ -1,0 +1,57 @@
+version: "1"
+name: "slot-fe-client-agent-team"
+workflow_document: "../references/agent-collaboration-workflow.md"
+concepts_document: "../references/workflow-concepts.md"
+root_index: "../agent-team.yaml"
+
+invocation_protocol:
+  weak_mention: "Plain @pm-agent loads role/rules only."
+  full_workflow: "@pm-agent 启动 工作流 / @pm-agent 工作流 / @pm-agent 启动完整 agent 工作流 / 调度各 agent 修复 / 按 PM 工作流跑到 QA 通过"
+  stop_conditions: "QA pass with evidence; user accepts downgrade; or real blocker with evidence and recovery steps."
+  no_subagent_fallback: "If spawn tools are unavailable, PM runs the same role sequence in the main session."
+  defaults: "../agent-team.yaml#workflow_defaults"
+
+model_aliases:
+  gpt5.5: "gpt-5.5"
+  gpt5.4: "gpt-5.4"
+
+failure_fallbacks:
+  qa-not-pass: "qa-man-agent -> PM -> doc-man-agent refines requirements with bug report -> PM re-gates -> cocos-man-agent -> qa-man-agent"
+  cocos-not-pass: "cocos-man-agent reports failure to PM -> PM dispatches doc/asset/resources -> PM re-gates -> cocos-man-agent -> qa-man-agent"
+
+agents:
+  pm-agent:
+    config: "./pm-agent/AGENT.md"
+    skill: "pm-agent"
+    model: "gpt5.5"
+    role: "user-facing coordinator"
+
+  git-agent:
+    config: "./git-agent/AGENT.md"
+    skill: "git-agent"
+    model: "gpt5.5"
+    role: "Git modification operator"
+
+  doc-man-agent:
+    config: "./doc-man-agent/AGENT.md"
+    skill: "doc-man-agent"
+    model: "gpt5.5"
+    role: "competitor and requirement analyst"
+
+  asset-man-agent:
+    config: "./asset-man-agent/AGENT.md"
+    skill: "asset-man-agent"
+    model: "gpt5.4"
+    role: "resource project and legacy-flow inspector"
+
+  cocos-man-agent:
+    config: "./cocos-man-agent/AGENT.md"
+    skill: "cocos-man-agent"
+    model: "gpt5.5"
+    role: "Cocos Creator implementation developer"
+
+  qa-man-agent:
+    config: "./qa-man-agent/AGENT.md"
+    skill: "qa-man-agent"
+    model: "gpt5.4"
+    role: "MCP runtime acceptance tester"

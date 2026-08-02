@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hbfy Hbfy Game Logic"
+  short_description: "[games/hbfy] HBFY 黑幫風雲的專屬遊戲邏輯。處理 Cluster Pay 集群消除、 大獎展示、HBFY 的 API 調用、符號映射時使用。"
+  default_prompt: "Use $name for this Slot FE Client task."

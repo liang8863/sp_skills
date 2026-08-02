@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cocos Expert"
+  short_description: "Cocos Creator 3.8 開發專家。當需要 UI 組件設計、動畫特效實現、 節點生命週期管理、MVC 模式實踐、性能優化時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

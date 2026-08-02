@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Message Workflow"
+  short_description: "Migrated Claude /commit workflow. Use when the user explicitly asks to generate a commi..."
+  default_prompt: "Use $skillName for this Slot FE Client task."

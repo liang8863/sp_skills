@@ -1,0 +1,59 @@
+{
+    "env": {
+        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash -c \"ROOT=\\$(git rev-parse --show-superproject-working-tree 2>/dev/null | grep . || git rev-parse --show-toplevel 2>/dev/null) && node \\\"\\$ROOT/.codex/hooks/session-start.js\\\"\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash -c \"ROOT=\\$(git rev-parse --show-superproject-working-tree 2>/dev/null | grep . || git rev-parse --show-toplevel 2>/dev/null) && node \\\"\\$ROOT/.codex/hooks/check-prefab-manual-op.js\\\"\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash -c \"ROOT=\\$(git rev-parse --show-superproject-working-tree 2>/dev/null | grep . || git rev-parse --show-toplevel 2>/dev/null) && node \\\"\\$ROOT/.codex/hooks/prettier-format.js\\\"\"",
+                        "timeout": 30
+                    },
+                    {
+                        "type": "command",
+                        "command": "bash -c \"ROOT=\\$(git rev-parse --show-superproject-working-tree 2>/dev/null | grep . || git rev-parse --show-toplevel 2>/dev/null) && node \\\"\\$ROOT/.codex/hooks/update-readme-skills.js\\\"\"",
+                        "timeout": 15
+                    }
+                ]
+            }
+        ]
+    },
+    "permissions": {
+        "allow": [
+            "Read",
+            "Bash(npm run *)",
+            "Bash(ls *)",
+            "WebFetch",
+            "Glob",
+            "Grep",
+            "TodoWrite"
+        ]
+    }
+}

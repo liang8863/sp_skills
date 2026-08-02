@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asset Man Agent"
+  short_description: "資源工程檢索、樣式替換、缺失清單與接入建議"
+  default_prompt: "Use $asset-man-agent to inspect resource-project assets, map visual resources into the live game without changing logic, and prepare an integration inventory."

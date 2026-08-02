@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Agent"
+  short_description: "Manage Git rebase, merge, commit and push workflows."
+  default_prompt: "Use $git-agent to safely manage branch sync, rebase, commit messages, and push checks."

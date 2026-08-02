@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slot Reel System"
+  short_description: "SlotReel 轉輪系統的架構與 Hooks。當開發轉軸動畫、圖標映射、 消除/掉落、Scatter 瞇牌、轉輪初始化、GameService Hooks 客製化時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

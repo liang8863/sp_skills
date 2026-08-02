@@ -1,0 +1,4 @@
+interface:
+  display_name: "QA Man Agent"
+  short_description: "MCP 驗收、截圖對比與 pass/fail 報告"
+  default_prompt: "Use $qa-man-agent to validate a completed Cocos implementation against the requirement document."

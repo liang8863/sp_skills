@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Quality"
+  short_description: "代碼品質審查專家。當需要 code review、性能分析、代碼風格檢查、 最佳實踐驗證、可維護性評估時使用。"
+  default_prompt: "Use $skillName for this Slot FE Client task."

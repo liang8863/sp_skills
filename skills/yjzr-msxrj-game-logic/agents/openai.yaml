@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yjzr Msxrj Game Logic"
+  short_description: "[games/yjzr] MSXRJ Queen of Bounty 的專屬遊戲邏輯。處理 Cascade 連消、免費旋轉選擇、倍數遞增、MultArray 倍率窗表現、API 調用與符號映射。"
+  default_prompt: "Use $name for this Slot FE Client task."

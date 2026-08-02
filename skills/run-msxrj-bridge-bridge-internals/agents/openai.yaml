@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Msxrj Bridge Bridge Internals"
+  short_description: "[games/_run-slot-fe-msxrj/assets/scripts/bridge] Bridge 層內部開發。修改 Loader、EventBridge、Hos..."
+  default_prompt: "Use $name for this Slot FE Client task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slot FE Client Workflow"
+  short_description: "Project rules, Git workflow, MCP validation, and visual acceptance."
+  default_prompt: "Use $slot-fe-client-workflow to choose the right Slot FE Client workflow, including Git rebase conflict handling, MCP validation, and screenshot-based visual acceptance."

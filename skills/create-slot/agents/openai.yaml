@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Slot Project"
+  short_description: "Create a slot-fe game from a translated Cocos project and sibling template."
+  default_prompt: "Use $create-slot when @create_slot is followed by a translated project path; derive slot-fe-{name}, create it from addr/../../template, migrate verified game resources and TS3 staging output, discard TS24 code, restore the required bridge submodule, select the migrated main.scene, preserve shared template code, and write a migration report under doc."

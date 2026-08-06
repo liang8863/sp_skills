@@ -1,4 +1,0 @@
-interface:
-  display_name: "Run Msxrj Msxrj Game Logic"
-  short_description: "[games/_run-slot-fe-msxrj] MSXRJ Queen of Bounty 的專屬遊戲邏輯。處理 Cascade 連消、免費旋轉選擇、 倍數遞增系統、M..."
-  default_prompt: "Use $name for this Slot FE Client task."

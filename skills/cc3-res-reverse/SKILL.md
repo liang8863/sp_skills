@@ -262,6 +262,12 @@ Run this organization step only after translation, binding, Prefab-reference val
 5. Re-scan Prefab/Scene references and resource paths after every move. Resolve references from parsed JSON/YAML and current `.meta` data; do not repair paths with blind global text replacement. Re-run the Missing Script gate and require zero unresolved script references.
 6. Run `git diff --check` and `git status --short --untracked-files=all`. Stage only the resolved input project's intended translation, binding, documentation, and layout files; never stage `library/`, `temp/`, `build/`, `node_modules/`, or unrelated dirty work. After all gates pass, create exactly one Git commit for the completed translation layout and record the commit hash in the completion report. Do not create the commit when any gate fails.
 
+### 6.8 Multi-Language Resource Retention
+
+When organizing resources, inspect locale directories from the parsed resource tree before deleting anything. Treat a directory whose name is an ISO-like language code, or begins with one followed by `_` or `-`, as a language variant. Keep only the `zh` and `en` primary languages: preserve exact `zh`/`en` directories and English variants such as `en_social` and `en_stkus`; delete other locale directories together with their files and matching `.meta` files. Do not delete non-locale directories or shared/root English assets, and do not use blind global text replacement to repair references.
+
+After cleanup, verify that no non-`zh`/`en` locale directory remains, all retained resource `.meta` files are present, no Prefab/Scene/resource reference points to a removed locale path, and the resource inventory records the retained variants plus deletion counts. Run the normal Prefab/class-id, documentation, and `git diff --check` gates before the single project commit.
+
 Validate the final layout before reporting completion:
 
 ```powershell

@@ -1,4 +1,0 @@
-interface:
-  display_name: "MSXRJ Feature Architecture"
-  short_description: "Enforce MSXRJ View and PerformanceCtrl responsibilities."
-  default_prompt: "Use $msxrj-feature-architecture to implement this MSXRJ UI feature with the correct View and MsxrjPerformanceCtrl responsibilities."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "YJZR JS To TS Migration"
-  short_description: "Convert mounted YJZR legacy JS to commented Cocos 3.8 TS under games/yjzr only."
-  default_prompt: "Use $yjzr-js-to-ts-migration to convert mounted YJZR legacy JS scripts into commented games/yjzr/assets/scripts/yjzr TypeScript, preserve prefab script references, and do not sync results back to external NewProject."

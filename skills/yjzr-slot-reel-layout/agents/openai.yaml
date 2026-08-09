@@ -1,4 +1,0 @@
-interface:
-  display_name: "YJZR Slot Reel Layout"
-  short_description: "YJZR reel layout, symbol asset config, and prefab mask rules."
-  default_prompt: "Use this skill when modifying or debugging YJZR slot reel layout, icon/background/blur symbol config, masks, OddsPanel alignment, or GamePanel prefab reel structure."

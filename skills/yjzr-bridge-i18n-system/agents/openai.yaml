@@ -1,4 +1,0 @@
-interface:
-  display_name: "Yjzr Bridge I18n System"
-  short_description: "[games/yjzr/assets/scripts/bridge] 國際化系統。處理多語言翻譯、LanguageData、LocalizedLabel/Sprite/Spi..."
-  default_prompt: "Use $name for this Slot FE Client task."

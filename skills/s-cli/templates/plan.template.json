@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "taskId": "20260810-game-feature",
+  "project": "E:/CCCCCC/slot-fe-client/games/game",
+  "goal": "Describe the requested behavior",
+  "resourceBaseline": {
+    "status": "VERIFIED",
+    "project": "E:/CCCCCC/slot-fe-client/games/game_UI",
+    "feature": "Matched resource-project feature",
+    "evidence": [
+      {
+        "source": "assets/scripts/source-controller.js#method",
+        "target": "assets/scripts/TargetController.ts#method",
+        "behavior": "Observable resource-project behavior",
+        "adaptation": "Compatibility mapping without behavior changes"
+      }
+    ],
+    "uncovered": []
+  },
+  "analysisRouting": {
+    "module": "InfoBoard / Total Win",
+    "model": "terra",
+    "evidence": [
+      "The request does not directly modify Reel behavior"
+    ]
+  },
+  "constraints": [
+    "Use resourceBaseline as the observable behavior source",
+    "Do not modify files outside affectedFiles"
+  ],
+  "baseline": {
+    "branch": "dev",
+    "dirtyFiles": []
+  },
+  "affectedFiles": [
+    "assets/scripts/TargetController.ts"
+  ],
+  "steps": [
+    {
+      "id": "implement",
+      "action": "Apply the evidenced behavior mapping",
+      "files": [
+        "assets/scripts/TargetController.ts"
+      ],
+      "verify": [
+        "npm run typecheck"
+      ]
+    }
+  ],
+  "acceptance": [
+    "The target behavior matches the resource project",
+    "No files outside affectedFiles are modified"
+  ],
+  "stopConditions": [
+    "Resource evidence is missing or contradicted",
+    "Implementation requires an undeclared file"
+  ]
+}
+

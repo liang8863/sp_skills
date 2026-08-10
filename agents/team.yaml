@@ -14,12 +14,22 @@ invocation_protocol:
 model_aliases:
   gpt5.5: "gpt-5.5"
   gpt5.4: "gpt-5.4"
+  terra: "gpt-5.6-terra"
+  sol: "gpt-5.6-sol"
+  luna: "gpt-5.6-luna"
 
 failure_fallbacks:
   qa-not-pass: "qa-man-agent -> PM -> doc-man-agent refines requirements with bug report -> PM re-gates -> cocos-man-agent -> qa-man-agent"
   cocos-not-pass: "cocos-man-agent reports failure to PM -> PM dispatches doc/asset/resources -> PM re-gates -> cocos-man-agent -> qa-man-agent"
 
 agents:
+  s-cli-agent:
+    config: "./s-cli-agent/AGENT.md"
+    skill: "s-cli"
+    analysis_models: "terra(default), sol(direct Reel or Free Game/Bonus work)"
+    execution_model: "luna"
+    role: "resource-project-driven Slot client implementation orchestrator"
+
   pm-agent:
     config: "./pm-agent/AGENT.md"
     skill: "pm-agent"

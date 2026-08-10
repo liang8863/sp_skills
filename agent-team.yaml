@@ -73,6 +73,9 @@ workflow_defaults:
 model_aliases:
   gpt5.5: "gpt-5.5"
   gpt5.4: "gpt-5.4"
+  terra: "gpt-5.6-terra"
+  sol: "gpt-5.6-sol"
+  luna: "gpt-5.6-luna"
 
 failure_fallbacks:
   qa_not_pass:
@@ -102,6 +105,21 @@ mcp_validation:
     - "console/log status when validating Cocos implementation or QA results"
 
 agents:
+  s_cli:
+    agent_config: ".codex/agents/s-cli-agent/AGENT.md"
+    skill: "s-cli"
+    analysis_models:
+      default: "terra"
+      reel: "sol"
+      free_game: "sol"
+    execution_model: "luna"
+    knowledge: ".codex/agents/s-cli-agent/references/slot-function-reference.md"
+    owns:
+      - "Slot client requirement analysis"
+      - "resource-project behavior mapping"
+      - "validated plan execution"
+      - "implementation verification"
+
   pm:
     agent_config: ".codex/agents/pm-agent/AGENT.md"
     skill: "pm-agent"

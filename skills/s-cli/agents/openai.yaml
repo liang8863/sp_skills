@@ -1,0 +1,5 @@
+interface:
+  display_name: "s_cli"
+  short_description: "資源工程驅動的 Slot 客戶端分析與實作"
+  default_prompt: "Use $s-cli to analyze this Slot client requirement with the routed model and execute the validated plan with Luna."
+

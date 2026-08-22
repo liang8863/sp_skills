@@ -1,5 +1,4 @@
 interface:
   display_name: "s_cli"
-  short_description: "資源工程驅動的 Slot 客戶端分析與實作"
-  default_prompt: "Use $s-cli to analyze this Slot client requirement with the routed model and execute the validated plan with Luna."
-
+  short_description: "讀取資源工程 project_info 的 Slot 客戶端分析與實作"
+  default_prompt: "Use $s-cli to analyze this Slot client requirement with the routed model and execute the validated plan with Luna. Before accepting a UI resource project, read and validate its doc/project_info.md metadata, including uiProjectPath, gameId, and an absolute HTTP(S) competitorUrl."

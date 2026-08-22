@@ -16,6 +16,12 @@ try {
 
     & $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -PlanPath $invalidPath -SkipPathChecks
     if ($LASTEXITCODE -eq 0) { throw 'Invalid plan was accepted' }
+
+    $invalid.rootCause.PSObject.Properties.Remove('evidence')
+    $invalid | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $invalidPath -Encoding UTF8
+
+    & $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -PlanPath $invalidPath -SkipPathChecks
+    if ($LASTEXITCODE -eq 0) { throw 'Plan without root-cause evidence was accepted' }
 } finally {
     Remove-Item -LiteralPath $invalidPath -Force -ErrorAction SilentlyContinue
 }

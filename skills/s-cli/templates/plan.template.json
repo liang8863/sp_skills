@@ -3,6 +3,20 @@
   "taskId": "20260810-game-feature",
   "project": "E:/CCCCCC/slot-fe-client/games/game",
   "goal": "Describe the requested behavior",
+  "rootCause": {
+    "status": "VERIFIED",
+    "statement": "The verified underlying cause",
+    "boundary": "The narrow shared function or state transition to repair",
+    "evidence": [
+      {
+        "source": "path#symbol, runtime log, or reproducible seed",
+        "observation": "Observed evidence that proves the cause"
+      }
+    ],
+    "rejectedHypotheses": [
+      "A symptom-level or disproven alternative"
+    ]
+  },
   "resourceBaseline": {
     "status": "VERIFIED",
     "project": "E:/CCCCCC/slot-fe-client/games/game_UI",
@@ -56,4 +70,3 @@
     "Implementation requires an undeclared file"
   ]
 }
-

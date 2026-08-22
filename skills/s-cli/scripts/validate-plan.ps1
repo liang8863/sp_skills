@@ -31,7 +31,7 @@ try {
     exit 1
 }
 
-foreach ($field in @('version', 'taskId', 'project', 'goal', 'resourceBaseline', 'analysisRouting', 'baseline', 'affectedFiles', 'steps', 'acceptance', 'stopConditions')) {
+foreach ($field in @('version', 'taskId', 'project', 'goal', 'rootCause', 'resourceBaseline', 'analysisRouting', 'baseline', 'affectedFiles', 'steps', 'acceptance', 'stopConditions')) {
     if (-not (Has-Property $plan $field)) {
         Add-PlanError "Missing field: $field"
     }
@@ -40,6 +40,19 @@ foreach ($field in @('version', 'taskId', 'project', 'goal', 'resourceBaseline',
 if ($plan.version -ne 1) { Add-PlanError 'version must be 1' }
 foreach ($field in @('taskId', 'project', 'goal')) {
     if (-not (Has-Text $plan.$field)) { Add-PlanError "$field must not be empty" }
+}
+
+$rootCause = $plan.rootCause
+if ($rootCause.status -ne 'VERIFIED') { Add-PlanError 'rootCause.status must be VERIFIED before planning' }
+foreach ($field in @('statement', 'boundary')) {
+    if (-not (Has-Text $rootCause.$field)) { Add-PlanError "rootCause.$field must not be empty" }
+}
+$rootCauseEvidence = @($rootCause.evidence | Where-Object { $null -ne $_ })
+if ($rootCauseEvidence.Count -eq 0) { Add-PlanError 'rootCause.evidence must contain at least one item' }
+foreach ($item in $rootCauseEvidence) {
+    foreach ($field in @('source', 'observation')) {
+        if (-not (Has-Text $item.$field)) { Add-PlanError "Each rootCause.evidence item requires $field" }
+    }
 }
 
 if (-not $SkipPathChecks -and (Has-Text $plan.project) -and -not (Test-Path -LiteralPath $plan.project -PathType Container)) {

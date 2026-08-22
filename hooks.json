@@ -34,7 +34,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c \"ROOT=\\$(git rev-parse --show-superproject-working-tree 2>/dev/null | grep . || git rev-parse --show-toplevel 2>/dev/null) && node \\\"\\$ROOT/.claude/hooks/check-prefab-manual-op.js\\\"\"",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"E:\\CCCCCC\\slot-fe-client\\.codex\\hooks\\cleanup-playwright-chrome.ps1\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),path=require('path');let root=process.cwd(),parent;while(root!==(parent=path.dirname(root))&&!fs.existsSync(path.join(root,'.claude','hooks','check-prefab-manual-op.js')))root=parent;const script=path.join(root,'.claude','hooks','check-prefab-manual-op.js');if(fs.existsSync(script))require(script);\"",
             "timeout": 10
           }
         ]

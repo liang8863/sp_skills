@@ -31,6 +31,20 @@
     ],
     "uncovered": []
   },
+  "serverDataCheck": {
+    "status": "VERIFIED",
+    "scope": "Spin/Reel/Drop/Cascade response contract",
+    "rawResponse": "path to captured response, debug HTTP output, or deterministic fixture",
+    "contract": "Validated board/frame/state contract and expected dimensions/indexing",
+    "responsibility": "client",
+    "evidence": [
+      {
+        "source": "runner README/spec, raw response, fixture, or mapper path",
+        "observation": "Observed value and the contract comparison"
+      }
+    ],
+    "unresolved": []
+  },
   "analysisRouting": {
     "module": "InfoBoard / Total Win",
     "model": "terra",

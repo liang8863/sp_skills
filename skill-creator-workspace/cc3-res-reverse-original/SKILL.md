@@ -1,6 +1,6 @@
 ---
 name: cc3-res-reverse
-description: 'Use when the user explicitly writes @cc3 or @cc3_res with a local PG Cocos project named {gameId}_UI and either an explicit competitor http(s) URL or a valid URL previously recorded for that project in doc/project_info.md. Establish and record a target-root Git baseline commit before the first project-file mutation, preserve every Prefab and Prefab meta without deletion, normalize the final resource root to assets/resources/{gameId}_res, reverse compiled JavaScript into Cocos 2.4 TypeScript under the s-cli-agent JS reverse guide, migrate every direct-child game script into Cocos Creator 3.8.7 TypeScript, remove active direct-child JavaScript from the formal scripts directory, preserve script UUIDs, bind final TS classes in Prefab/Scene/Resource data, and prove zero unresolved or Missing Script components. Always run a translation-feasibility probe before semantic work; if no authoritative converter or equivalent source exists, stop with an explicit blocker instead of creating placeholder TS. During conversion and binding, apply the high-risk script and numeric-atlas checklist, especially for NumberDisplay* and related rolling/display consumers.'
+description: 'Use when the user explicitly writes @cc3 or @cc3_res with a local PG Cocos project named {gameId}_UI and either an explicit competitor http(s) URL or a valid URL previously recorded for that project in doc/project_info.md. Establish and record a target-root Git baseline commit before the first project-file mutation, preserve every Prefab and Prefab meta without deletion, normalize the final resource root to assets/resources/{gameId}_res, reverse compiled JavaScript into Cocos 2.4 TypeScript under the s-cli-agent JS reverse guide, migrate it into Cocos Creator 3.8.7 TypeScript, replace converted JavaScript in the formal scripts directory, preserve script UUIDs, bind final TS classes in Prefab/Scene/Resource data, and prove zero unresolved or Missing Script components. During conversion and binding, apply the high-risk script and numeric-atlas checklist, especially for NumberDisplay* and related rolling/display consumers.'
 ---
 
 # CC3 PG Reverse And TypeScript Integration
@@ -23,7 +23,7 @@ The final active project layout is:
 ```text
 assets/
   scenes/
-  scripts/                         # final TS3 for every direct-child business script; no active direct-child JS
+  scripts/                         # final TS plus explicitly ignored JS boundaries
   resources/
     <gameId>_res/
       <all non-scene resources>
@@ -68,28 +68,7 @@ This toolkit is PG-specific. If the supplied competitor is not PG/PG Soft or the
 
 Use `JS_TO_COCOS24_TS_IGNORE_MODULES.txt` as the single ignore-list authority. Copy it byte-for-byte to the target project root when the project does not already contain the same file, so dependency and count checks use one reproducible list. Do not expand the list merely to avoid difficult conversions.
 
-The ignore list only removes modules from the semantic TS24 batch; it is not permission to keep JavaScript in the final project. For every ignored direct-child script, install an audited toolkit/shared TS3 implementation or perform the same source-preserving TS3 migration used for non-ignored scripts. Do not silently prefer or copy a shared implementation from a shipped sibling project. If the toolkit readme indicates that its snapshot may be stale, follow the Stage 1 equivalent-source workflow before reading another project: announce the exact read-only search roots and purpose, compare the candidate against the current JS, record evidence, and never overwrite a different implementation without a proven mapping.
-
-## Translation Feasibility Gate
-
-Run this gate immediately before creating semantic TS24 output. It prevents a long, misleading run when the repository contains only compiled Cocos JavaScript and no restoration tool or source equivalent.
-
-1. Probe the current repository and approved local toolkit roots for an executable JS-to-TS24 converter, a checked-in restoration script, source maps with real `sourcesContent`, or an equivalent TypeScript source set. Record the exact paths and versions that were checked.
-2. A Cocos-generated source map whose `sourcesContent` is the same `__extends`/`__decorate` CommonJS wrapper is still compiled output, not an authoritative TS source. A raw `.js` rename, `allowJs`, `// @ts-nocheck`, wrapper import, or placeholder class is not a translation result.
-3. Count both the full direct-child eligible set and the Prefab-bound reachable set. Reachability can prioritize batches, but it never reduces the required eligible count.
-4. If no authoritative converter or equivalent source is available, write `BLOCKED_NO_AUTHORITATIVE_TRANSLATOR` to the progress and binding reports, keep the original JS as the sole behavior source, and stop before Stage 2 or Stage 3. It is valid to create progress documents, dependency inventories, and read-only evidence; do not create decorated TS copies under `assets/` because Cocos imports scripts from every asset subdirectory.
-5. Never invent a hash, UUID, class id, candidate count, or runtime result to fill an evidence field. Use `unknown` and explain the missing observation, or do not record the candidate as accepted.
-
-This gate is a translation blocker, not a resource failure. Continue safe resource inventory and validation, but report `translated`, `formally installed`, `class-id bound`, and `runtime verified` as separate states.
-
-## Bundled Verification Scripts
-
-Use the deterministic scripts under `scripts/` instead of retyping ad hoc scanners. They emit JSON suitable for the project reports and return a non-zero exit code on a blocking mismatch.
-
-- `node scripts/verify-resource-move.mjs --repo <project> --baseline <commit> --game-id <id>` compares every pre-move Git blob with its mapped destination and reports `checked`, `missing`, and `mismatch`.
-- `node scripts/inventory-high-risk-prefabs.mjs --repo <project> --game-id <id>` inventories every high-risk component, serialized field set, frame count, frame UUID order, and nested controller binding after resource normalization.
-
-Run the resource script only after the authorized move and run the high-risk inventory before TS/binding writes and again after final binding. Store the command, timestamp, and JSON result; the scripts do not replace editor class or runtime probes.
+Do not retranslate ignored modules. Use the toolkit `shared/` snapshot by default. Do not silently prefer or copy a shared implementation from a shipped sibling project. If the toolkit readme indicates that its snapshot may be stale, follow the Stage 1 equivalent-source workflow before reading another project: announce the exact read-only search roots and purpose, compare the candidate against the current JS, record evidence, and never overwrite a different implementation without a proven mapping.
 
 ## Required Inputs And Metadata Gate
 
@@ -152,12 +131,6 @@ Run this gate after metadata output and before resource normalization or script 
 
 Treat ambiguous, non-script, runtime-only, or editor-unavailable results as blockers. Record the exact file, component, evidence, attempted repair, and next action. Do not claim that a clean text search proves a valid class binding.
 
-### Editor validation boundary
-
-Before using a Cocos MCP wrapper, prove that the server identity, project path, Creator version, and active profile match the resolved target. A valid MCP response from another game is not target evidence. `validate_prefab_references` checks ordinary AssetDB `__uuid__` resolution only; `missingCount: 0` does not prove script class registration, serialized property binding, or runtime behavior. If the result has empty file paths or no enumerated refs, classify it as partial smoke evidence and require an editor class probe for the affected component.
-
-For a missing ordinary material or effect reference, first inspect the target project's own importer/default-asset catalog and its UUID mapping. An exact target-owned built-in file with the referenced UUID may be restored byte-for-byte and revalidated; do not synthesize a material, copy a sibling material with a different UUID, or treat a zero-missing result as proof of script binding.
-
 ## High-Risk Script And Numeric Atlas Checklist
 
 Use this list during Prefab inventory, TS24/TS3 mapping, and final binding. It is a targeted review set, not an ignore list: every eligible module still follows the normal conversion and UUID rules. Record the matched paths and hit counts in `<project>-script-binding-report.md`, including zero hits for a group when that fact is useful to explain coverage.
@@ -166,20 +139,18 @@ Use this list during Prefab inventory, TS24/TS3 mapping, and final binding. It i
 
 | Match group | Typical names | Why it needs extra review |
 |---|---|---|
-| Numeric display chain | `NumberDisplay*` (`NumberDisplayController`, `NumberDisplayInterface`), `NumberRoll*` (`NumberRollController`, `NumberRollBaseController`, `NumberRollLabelController`, `NumberRollCurveController`), `NumberCurvedController`, `NumberLabel*`, `RemainingNumber*` (`RemainingNumberDisplayController`, `RemainingNumberEffectController`), `TimedWinRoll*`, `WinRoll*`, `CustomNumberDisplay*`, `FeatureBuyNumberDisplay` | These classes depend on serialized child nodes, display-controller overrides, and ordered digit SpriteFrames. A valid script class with an incomplete binding still renders blank or falls back to a plain Label. |
-| Numeric display consumers | `*BonusLoading*` (`BonusLoadingController`, `HbfyBonusLoadingPanel`), `*TotalWin*` (`TotalWinController`, `HbfyTotalWinPanel`, `SGTotalWinController`), `*BigWin*` (`BigWinController`, `HbfyBigWinController`, `SGBigWinController`), `*Multiplier*` (`MultiplierController`, `MultiplierHolderController`, `FreeSpinMultiplierController`), `*InfoBoard*` (`HbfyInfoBoardController`, `InfoBoardController`), `Infoboard*` (`InfoboardTipsController`, `InfoboardMessageController`, `SGInfoboardMessageController`), `*SpinButton*` (`QiBaseSpinButtonController`, `HbfySpinButtonController`, `SpinButtonController`), `FeatureBuy*`, `WaysController` | These controllers often resolve a nested NumberDisplay/NumberRoll component at runtime and are sensitive to path, class-id, callback, and lifecycle drift. |
-| Resource and pool binders | `SymbolAsset*` (`SymbolAssetController`), `*SlotItemPool*` (`SlotItemPool`, `GameSlotItemPool`), `AnimParticleSystem*` (`AnimParticleSystem`, `AnimParticleSystemPoolHandler`), `*FixedWild*` (`HgcsFixedWildEffectController`), `WildPayout*` (`WildPayoutEffectPlayer`), `*Atlas*` (`ResConfig`, atlas-loading helpers) | Their Prefab bindings commonly combine SpriteFrame/atlas references, pooled nodes, or legacy component IDs; a text-only UUID scan is not sufficient. |
+| Numeric display chain | `NumberDisplay*` (`NumberDisplayController`, `NumberDisplayInterface`), `NumberRoll*` (`NumberRollController`, `NumberRollBaseController`, `NumberRollLabelController`, `NumberRollCurveController`), `NumberCurvedController`, `NumberLabel*`, `TimedWinRoll*`, `WinRoll*`, `CustomNumberDisplay*`, `FeatureBuyNumberDisplay` | These classes depend on serialized child nodes, display-controller overrides, and ordered digit SpriteFrames. A valid script class with an incomplete binding still renders blank or falls back to a plain Label. |
+| Numeric display consumers | `*BonusLoading*` (`BonusLoadingController`, `HbfyBonusLoadingPanel`), `*TotalWin*` (`TotalWinController`, `HbfyTotalWinPanel`), `*BigWin*` (`BigWinController`, `HbfyBigWinController`), `*Multiplier*` (`MultiplierController`, `FreeSpinMultiplierController`), `*InfoBoard*` (`HbfyInfoBoardController`), `Infoboard*` (`InfoboardTipsController`, `InfoboardMessageController`), `*SpinButton*` (`QiBaseSpinButtonController`, `HbfySpinButtonController`), `FeatureBuyController` | These controllers often resolve a nested NumberDisplay/NumberRoll component at runtime and are sensitive to path, class-id, callback, and lifecycle drift. |
+| Resource and pool binders | `SymbolAsset*` (`SymbolAssetController`), `*SlotItemPool*` (`SlotItemPool`, `GameSlotItemPool`), `AnimParticleSystem*` (`AnimParticleSystem`, `AnimParticleSystemPoolHandler`), `*FixedWild*` (`HgcsFixedWildEffectController`), `WildPayout*` (`WildPayoutEffectPlayer`) | Their Prefab bindings commonly combine SpriteFrame/atlas references, pooled nodes, or legacy component IDs; a text-only UUID scan is not sufficient. |
 
 Also include `Legacy*` and `Compat*` wrappers whenever their names contain one of these tokens, for example `LegacyHgcsNumberDisplayController`, `LegacyNumberDisplay`, `LegacyNumberRoll`, and `LegacyTimedWinRollController`. These wrappers are frequent bridges between a preserved legacy UUID and a current Cocos 3 class id, so prefix-only matching must not exclude them.
 
 When searching numeric atlas data, include common frame families such as `info_0..info_9`, `big_0..big_9`, `auto_0..auto_9`, `mtp_*`, comma/decimal frames, and locale title frames. These are search hints only; never synthesize or reorder frames from the names. The source Prefab and target atlas metadata remain authoritative for the exact set, order, and UUID.
 
-Freeze the high-risk resource contract before any TS or binding write. Save, per component instance, the serialized field set, `fileId`, exact frame count, frame index-to-UUID mapping, atlas/meta path, punctuation/special-frame entries, and InfoBoard message asset fields. For InfoBoard, compare each component instance independently; equal script names or UUIDs do not imply equal fields. A missing word/sprite entry, a different `numberDisplayController` presence, or an atlas override is a blocker until the source behavior and target AssetDB resolve it.
-
 ### Required checks for every hit
 
 1. Compare the source and target node path, component type, `@property` field name, `fileId`, and ordinary asset UUIDs. Preserve target `fileId` and all non-script serialized values; do not accept a filename or UUID match as proof of equivalence.
-2. For `NumberDisplay*` and every consumer that owns one, inventory the exact `numberSprite`, `numberBlurSprite`, `sheet`, `numberSpriteAtlas`, punctuation/special-frame fields, `numberContainer`, `nodeNumberWidth`, `nodeNumberScale`, and `maxContainerSize` values when present. Compare frame count, frame name, order, and target-resolved UUID one by one. Ten, twelve, and thirteen frame arrays are all observed in shipped projects; do not assume a fixed length or infer missing entries from a sibling atlas. The source Prefab is authoritative.
+2. For `NumberDisplay*` and every consumer that owns one, inventory the exact `numberSprite`, `numberBlurSprite`, `sheet`, `numberSpriteAtlas`, punctuation/special-frame fields, `numberContainer`, `nodeNumberWidth`, `nodeNumberScale`, and `maxContainerSize` values when present. Compare frame count, frame name, order, and target-resolved UUID one by one. Do not assume that every game uses ten or twelve frames; the source Prefab is authoritative.
 3. Verify the runtime component constructor/class registration and the `NumberRoll*` or `TimedWinRoll*` `displayController` type from the current Cocos editor. A serialized `NumberDisplayController` accidentally loaded as `cc.UIOpacity`, an unresolved legacy class id, or a null nested controller is a blocking binding defect.
 4. Check that runtime language/atlas loading does not overwrite a serialized digit `sheet` with a text atlas unless the source behavior proves that assignment. A `numberSpriteAtlas` override can take precedence over valid digit frames and make a display blank or show the wrong glyphs.
 5. Resolve every digit and special frame through the target asset database after refresh. Verify that the atlas path, atlas `.meta`, subasset frame names, and UUIDs agree with the target project. If the source uses Cocos 2.x `.plist`, apply the toolkit D3 rule; do not treat copying the `.plist` and `.png` as a valid Cocos 3.8 SpriteFrame binding.
@@ -201,8 +172,6 @@ After the Prefab gate, normalize resources as follows:
 5. Scan scripts, configuration, and serialized data for path-string references to the moved paths before writing. Treat each path-string reference as a blocker unless a separately authorized deterministic migration covers it.
 6. Keep `assets/scenes/`, scripts, plugins, import materials, and unrelated directories outside this move.
 
-After the move, prove byte identity rather than relying on counts: compare every pre-move blob from the baseline tree (for example, `git ls-tree` plus `git hash-object`) with its mapped destination. Require `missing=0` and `mismatch=0`, and record the checked file count. A successful editor refresh cannot replace this proof.
-
 A successful normalization leaves only `<gameId>_res/` and its folder meta as direct children of `assets/resources/`, with `<gameId>` matching the prefix of the `<gameId>_UI` project leaf exactly. It also preserves a one-to-one source/destination mapping for every inventoried Prefab and Prefab meta.
 
 ## Stage 1: JavaScript To Cocos 2.4 TypeScript
@@ -213,15 +182,13 @@ Follow the s-cli-agent JS reverse guide directly. Use direct-child `assets/scrip
 2. Build `assets/scripts_ts24/_dependency_order.txt`. Convert dependency-first: constants/enums/tools, models/config/repositories, framework/helpers, UI controllers, slot controllers/state machines, then entry points. Record cycles without restructuring them.
 3. Before hand-restoring heavily minified or renamed code, evaluate whether user-authorized sibling projects from the same vendor/framework/version may contain an equivalent JS or restored TS source. Before reading outside the current project, tell the user the exact search roots and purpose. Keep all external-project access read-only and never create a build dependency on it.
 4. Do not accept a candidate because its filename or UUID matches. Compare module dependencies and usage, export semantics, inheritance, prototype/getter/setter shape, decorator fields and order, strings/constants/resources, control flow and callback order, and game-specific reel/bonus/audio/config differences. Use hashes, normalized AST, UUIDs, and structural fingerprints to narrow review, but never treat one signal as proof.
-5. When cross-project search occurs, reuse the project's existing equivalent-source evidence record; otherwise create one project-level `TS_REUSE_EVIDENCE.json`. For every candidate, record current and reference paths, hashes captured from the filesystem, UUID comparison, AST/structure/manual evidence, status and differences, and whether the result was fully reused, used only for names/types/structure, or rejected. Candidate totals must be derived from the recorded file list; never fill hashes or counts with placeholders. Do not create competing evidence files for the same process.
+5. When cross-project search occurs, reuse the project's existing equivalent-source evidence record; otherwise create one project-level `TS_REUSE_EVIDENCE.json`. For every candidate, record current and reference paths/hashes, UUID comparison, AST/structure/manual evidence, status and differences, and whether the result was fully reused, used only for names/types/structure, or rejected. Do not create competing evidence files for the same process.
 6. Reuse a fully equivalent TS candidate only after auditing it against the current JS. For partial matches, borrow only proven names, types, or class structure and rewrite current-project differences. The current project's JS remains the sole runtime behavior source; never infer its rules, protocol, RTP, configuration, or gameplay from a reference project, and never inherit reference `.meta` files or UUIDs.
 7. Restore module structure, classes, `cc._decorator`, `@ccclass`, `@property`, import/export shape, callbacks, semantic names, types, member access, prototype methods, and getters/setters. Preserve Cocos 2.4 APIs and the exact state-machine, spin/result/prize/bonus, resource-loading, schedule/action/event/callback order.
 8. Keep ignored CommonJS dependencies as explicit boundaries or connect the verified shared implementation. Do not duplicate broad local interfaces for ignored components. Replace temporary interfaces with real TS types or role-named boundary interfaces before closeout.
-9. Treat the ignore list as a Stage 1 scheduling rule only. Every ignored direct-child module still needs a documented TS3 source, preserved original UUID, final `.ts.meta`, and formal `assets/scripts/<relative>/Foo.ts` installation. If the toolkit snapshot does not cover an ignored module, the module is not exempt; restore it from the current JS or stop with a named blocker.
-10. Record batches, source/equivalent files, restored semantics, type decisions, dynamic boundaries, risks, commits, and exact checks in `assets/scripts_ts24/TS_REVERSE_PROGRESS.md`.
-11. Reuse existing general parse/type/prototype checks for each batch. Do not create a dedicated mock or behavior snapshot for every ordinary module. Add only the smallest one-off behavior check when static comparison cannot prove a high-risk state transition, data transform, resource load, asynchronous handoff, event cleanup, pool lifecycle, or animation callback; record its risk and exit condition.
-12. Freeze the Stage 1 file list, commands, and blocker definitions before closeout. Classify every result as blocker, false positive, or documented allowed boundary; fix only Stage 1 blockers and rerun the same frozen checks. Require count parity after ignores, full parse success, prototype/getter/setter/decorator/export parity, correct callback identity and order, consistent member access, and no recoverable `any`, broad `Function`, recoverable `unknown`, placeholder types, compiled wrappers, or unexplained completed-TS dependencies on JS.
-13. Run an editor import probe before and after each conversion batch. Bare CommonJS specifier failures such as `Unresolved specifier Utils` or a dependent controller name are Stage 1 blockers until the dependency is restored or explicitly classified as an ignored boundary. Do not treat a successful static parse as proof that the Cocos module loader can import the batch.
+9. Record batches, source/equivalent files, restored semantics, type decisions, dynamic boundaries, risks, commits, and exact checks in `assets/scripts_ts24/TS_REVERSE_PROGRESS.md`.
+10. Reuse existing general parse/type/prototype checks for each batch. Do not create a dedicated mock or behavior snapshot for every ordinary module. Add only the smallest one-off behavior check when static comparison cannot prove a high-risk state transition, data transform, resource load, asynchronous handoff, event cleanup, pool lifecycle, or animation callback; record its risk and exit condition.
+11. Freeze the Stage 1 file list, commands, and blocker definitions before closeout. Classify every result as blocker, false positive, or documented allowed boundary; fix only Stage 1 blockers and rerun the same frozen checks. Require count parity after ignores, full parse success, prototype/getter/setter/decorator/export parity, correct callback identity and order, consistent member access, and no recoverable `any`, broad `Function`, recoverable `unknown`, placeholder types, compiled wrappers, or unexplained completed-TS dependencies on JS.
 
 Do not modify Prefab, Scene, Resource JSON, original JS, or original `.js.meta` during TS24 work.
 
@@ -230,12 +197,11 @@ Do not modify Prefab, Scene, Resource JSON, original JS, or original `.js.meta` 
 Use only the closed `assets/scripts_ts24/` output as the source and write `assets/scripts_ts3/`.
 
 1. Keep one TS3 file for every non-ignored TS24 business script. Give every additional helper an explicit purpose.
-2. For each Stage 1 ignored module, audit the selected toolkit/shared TS3 source in the same Cocos 3 project, record its source hash and target UUID mapping, and include it in the TS3 closeout even though it has no local TS24 reverse file.
-3. Migrate `cc.*` globals to explicit imports from `"cc"`; migrate Node/UI properties, Action APIs, lifecycle, events, input, particles, component lookup, coordinate conversion, and serialized-property types according to the toolkit guide.
-4. Preserve file names, default class names, editor-visible property names, callback identity, target/capture values, execution order, and real dynamic boundaries.
-5. Use current Cocos 3 APIs rather than a broad Cocos 2 compatibility shim. Do not add fake `cc` declarations or a temporary tsconfig to mask migration failures.
-6. Record batches, mappings, allowed boundaries, risks, and checks in `assets/scripts_ts3/TS3_MIGRATION_PROGRESS.md`.
-7. Freeze the TS3 checks, then require full parse success and classification of every old-API, Node-property, lifecycle, component-lookup, `@property`, `any`, `Function`, placeholder-type, and formatting scan result.
+2. Migrate `cc.*` globals to explicit imports from `"cc"`; migrate Node/UI properties, Action APIs, lifecycle, events, input, particles, component lookup, coordinate conversion, and serialized-property types according to the toolkit guide.
+3. Preserve file names, default class names, editor-visible property names, callback identity, target/capture values, execution order, and real dynamic boundaries.
+4. Use current Cocos 3 APIs rather than a broad Cocos 2 compatibility shim. Do not add fake `cc` declarations or a temporary tsconfig to mask migration failures.
+5. Record batches, mappings, allowed boundaries, risks, and checks in `assets/scripts_ts3/TS3_MIGRATION_PROGRESS.md`.
+6. Freeze the TS3 checks, then require full parse success and classification of every old-API, Node-property, lifecycle, component-lookup, `@property`, `any`, `Function`, placeholder-type, and formatting scan result.
 
 Keep Prefab, Scene, Resource JSON, and existing meta bindings read-only until TS3 static closeout passes.
 
@@ -249,7 +215,7 @@ Copy every original JS and `.js.meta` byte-for-byte to `migrationArtifacts/scrip
 
 ### Install Final TypeScript
 
-For every direct-child `assets/scripts/Foo.js`, including modules listed in the Stage 1 ignore file:
+For each non-ignored `Foo.js`:
 
 1. Remove the active `Foo.js` and `Foo.js.meta` only after its verified backup exists.
 2. Install the corresponding closed TS3 file as `assets/scripts/<relative>/Foo.ts`.
@@ -257,7 +223,7 @@ For every direct-child `assets/scripts/Foo.js`, including modules listed in the 
 4. Refresh/reimport and compile again. Verify `script path -> class name -> preserved full UUID -> current compressed class id` from the current editor or its current editor chunks.
 5. Mirror the verified final `Foo.ts.meta` schema and preserved UUID into the matching `migrationArtifacts/scriptsTs3/` evidence path. Keep the archived TS source hash identical to the installed final source so downstream project creation can reuse the same class identity without reviving JavaScript.
 
-Never keep formal `Foo.js` and `Foo.ts` together. Never rename editor-visible fields merely to improve style. An ignored module may use the selected audited shared TS3 implementation, but its active formal artifact is still `assets/scripts/Foo.ts` with the preserved original UUID; no direct-child JS exception is allowed.
+Never keep formal `Foo.js` and `Foo.ts` together. Never rename editor-visible fields merely to improve style. Keep ignored modules as their original JS/CommonJS or the selected shared implementation, with their existing bindings.
 
 After final installation, remove the active TS24/TS3 script copies under `assets/` only when their archived hashes match. Do not remove `migrationArtifacts/`.
 
@@ -271,7 +237,7 @@ Generate a dry-run mapping before every serialized write. Include file count, oc
 - Do not JSON round-trip a Prefab or Scene. Apply exact, scope-limited replacements with expected occurrence assertions, then parse and structurally verify the result.
 - Rebind every affected Prefab. If an affected `.scene` requires a write, first enumerate the exact scene files, reason, replacement counts, and risk, then obtain the explicit scene-file confirmation required by the `prefab-scene-json` workflow. Record zero scene writes when none are needed.
 - Never delete, replace, merge, or overwrite a Prefab or its meta while binding. Stop if a binding cannot be completed without violating the non-destructive Prefab invariant.
-- Treat an ignored module as complete only when its audited TS3 source is installed and class-id bound. An ignored module with active JS is an unresolved conversion gap, not a valid final boundary.
+- Treat ignored modules as valid external bindings when their original JS remains active; do not classify them as conversion gaps.
 
 Scan for full-UUID script `__type__` values after replacement and classify every hit. A script component must use the current generated Cocos 3 class id. Never replace full UUID-looking values outside a structurally identified script component.
 
@@ -283,11 +249,9 @@ Require all of the following:
 
 - the target project's Git top-level equals the resolved project root, and `gitBaselineCommit` resolves to an existing commit that is an ancestor of or equal to `HEAD`;
 - the project leaf is `<gameId>_UI`, and the only direct resource root is the exact `assets/resources/<gameId>_res/` directory plus its folder meta;
-- every non-ignored eligible JS module has a TS24 and TS3 history plus a final formal TS file;
-- every ignored direct-child JS module has an audited TS3 source and a final formal TS file, even when the source came from the toolkit shared snapshot;
-- no direct-child `assets/scripts/*.js` or `.js.meta` remains active, and no formal JS/TS basename collision exists;
-- any remaining nested/plugin JavaScript is outside the business-script scope, explicitly enumerated, and does not provide a final game component class;
-- ignored-module and selected-shared-source records match the installed TS3 artifacts;
+- every eligible JS module has a TS24 and TS3 history plus a final formal TS file;
+- no converted `.js` or `.js.meta` remains active, and no formal JS/TS basename collision exists;
+- ignored JS modules and selected shared modules match the recorded policy;
 - every final `.ts.meta` has the preserved original script UUID and a current editor-generated class id;
 - all Prefabs pass structural reference validation with zero Missing Script components;
 - every pre-conversion Prefab and Prefab meta maps to exactly one final file, with count parity, preserved UUIDs, no overwrites, `deletedPrefabCount: 0`, and `deletedPrefabMetaCount: 0`;

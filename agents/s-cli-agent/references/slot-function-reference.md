@@ -58,16 +58,16 @@ Bootstrap / Loading
 | GameService / 交易 | `terra` | bet 快照、Spin、Auto Spin、Feature Buy、Last Spin、恢复、余额/交易完成 | `services/GameService.ts`、`api`、`bridge/types/gameLogic` | 请求、响应、事件、表现、余额和最终完成状态一致 |
 | API / Mapper / Types | `terra` | raw 请求响应、camelCase 转换、订单/金额/布局字段 | `api/GameApi.ts`、`api/types`、mapper | 不丢字段、不误读缩写；父子订单和每帧/整局金额可区分 |
 | Event / State | `terra` | 统一事件、payload、游戏状态转换、事件去重 | `types/GameTypes.ts`、GameStateManager、Performance | 发布者/消费者配对；重复结果不会重复结算；异常能回到可用状态 |
-| Reel / SlotReel | `sol` | 结果布局、停轮、符号显示、Wild/Scatter、长符号、坐标、消除/下落 | `CustomSlotReel*`、布局 helper、Reel hooks | 每个位置映射正确，停轮/下落/遮罩/特效无错位 |
+| Reel / SlotReel | `terra` | 结果布局、停轮、符号显示、Wild/Scatter、长符号、坐标、消除/下落 | `CustomSlotReel*`、布局 helper、Reel hooks | 每个位置映射正确，停轮/下落/遮罩/特效无错位 |
 | Performance | `terra` | 把结果事件编排成视觉生命周期 | `*PerformanceCtrl.ts`、`PerformanceCtrlBase.ts` | 普通 Spin、Cascade、Free Game、BigWin、TotalWin 的顺序和回调完整 |
 | InfoBoard | `terra` | 跑马灯、Win、Total Win、Scatter/FG 提示、底板、倍率和清理 | `Infoboard*`、`InfoBoardControllerBase`、InfoBoard Prefab | 文案/金额/模式/动画/回调/清理正确 |
 | Win / Payout | `terra` | 中奖高亮、金额滚动、符号派彩、Wild/Scatter 特效 | `Win*`、`Payout*`、`Symbol*` | 中奖位置、金额、特效顺序和结束回调一致 |
 | BigWin / TotalWin | `terra` | 大赢等级、全屏动画、总赢滚动、收集/跳过/退场 | `BigWin*`、`TotalWin*`、对应 Prefab | 阈值、金额、音效、跳过、结算和下一 Spin 清理正确 |
-| Free Game / Bonus | `sol` | 触发、入场、BonusLoading、FG UI、剩余次数、Retrigger、退出结算 | `FreeGame*`、`BonusLoading*`、`Remaining*` | 进入/恢复/重触发/结束/TotalWin/回普通 UI 的链路完整 |
-| 特有玩法 | `terra`；直接 Reel 改动用 `sol` | Cascade、倍率、Respin、Slow Drop、Ways、Feature Buy 等 | 当前项目专属 hooks/controllers/config | 只按当前项目协议验收，不套用另一个项目的玩法参数 |
+| Free Game / Bonus | `terra` | 触发、入场、BonusLoading、FG UI、剩余次数、Retrigger、退出结算 | `FreeGame*`、`BonusLoading*`、`Remaining*` | 进入/恢复/重触发/结束/TotalWin/回普通 UI 的链路完整 |
+| 特有玩法 | `terra` | Cascade、倍率、Respin、Slow Drop、Ways、Feature Buy 等 | 当前项目专属 hooks/controllers/config | 只按当前项目协议验收，不套用另一个项目的玩法参数 |
 | Resource / Prefab | `terra` | Scene 节点、Component、UUID/meta、Prefab、Sprite/Spine/Animation/Audio | `assets/resources`、Prefab 文本、资源路径常量 | 绑定存在、类型正确、资源可加载、启用/禁用时机正确 |
 
-模型列表示默认路由。混合需求只要需要直接修改 Reel/SlotReel/布局能力，或涉及 Free Game/Bonus 的触发、入退场、专用 UI/资源、Retrigger、Restore、单轮 Big Win、最终结算及其关联链路，整次需求分析改用 `sol`；否则使用 `terra`。
+模型列表示默认路由。转盘相关混合需求，只要涉及 Reel/SlotReel/布局能力，或涉及 Free Game/Bonus 的触发、入退场、专用 UI/资源、Retrigger、Restore、单轮 Big Win、最终结算及其关联链路，整次需求统一使用 `terra`；其他需求也默认使用 `terra`。
 
 ## 三、按需功能切片
 
@@ -78,10 +78,10 @@ Bootstrap / Loading
 | 启动、Loading、Host、Bridge、ExternalModules | `bootstrap-and-bridge.md` | `terra` |
 | GameService、API、Mapper、交易、金额、Last Spin、Auto Spin | `game-service-api.md` | `terra` |
 | 事件、状态、Performance、时序、callback、结算编排 | `event-state-performance.md` | `terra` |
-| Reel、SlotReel、布局、停轮、Scatter、peeking、掉落、Cascade | `reel-and-layout.md` | `sol` |
+| Reel、SlotReel、布局、停轮、Scatter、peeking、掉落、Cascade | `reel-and-layout.md` | `terra` |
 | InfoBoard、跑马灯、Win、提示、语言刷新 | `infoboard-win.md` | `terra` |
 | BigWin、TotalWin、阈值、跳过、收集、退场 | `bigwin-totalwin.md` | `terra` |
-| Free Game、Bonus、Retrigger、Restore、FG 入退场/次数 | `free-game-bonus.md` | `sol` |
+| Free Game、Bonus、Retrigger、Restore、FG 入退场/次数 | `free-game-bonus.md` | `terra` |
 | GamePanel、Spin、Bet、Turbo、Stop、Control、Feature Buy | `controls-and-spin.md` | `terra` |
 | Prefab、Scene、资源、UUID、meta、Audio、i18n | `resource-prefab-scene.md` | `terra` |
 
@@ -188,7 +188,7 @@ Last Spin/异常路径：
 
 两个成品项目共同证明：Slot 客户端的通用能力不是“Spin + Reel + 一个 UI”，而是交易、事件状态、表现编排、Reel 映射、InfoBoard/Win、Free Game、控制面板和资源绑定之间的完整链路。
 
-因此 `s_cli` 的需求分析 Agent 必须先产出模块能力矩阵，再产出代码计划；分析模型按模块路由，直接 Reel 能力及任何 Free Game/Bonus 相关处理使用 `sol`，其他能力默认使用 `terra`。`luna` 只能按能力项和验收项执行，不能按模糊的控制器名称猜测修改范围。
+因此 `s_cli` 的需求分析 Agent 必须先产出模块能力矩阵，再产出代码计划；分析模型按模块路由，转盘能力及任何 Free Game/Bonus 相关处理统一使用 `terra`，其他能力也默认使用 `terra`。`luna` 只能按能力项和验收项执行，不能按模糊的控制器名称猜测修改范围。
 
-无论路由到 `terra` 还是 `sol`，都必须先通过资源工程对照 Gate；`luna` 只能执行已有资源工程证据支持的目标工程适配，不能自行新增、优化或重排玩法与表现。
+无论使用默认的 `terra` 还是上层明确指定的 `sol`，都必须先通过资源工程对照 Gate；`luna` 只能执行已有资源工程证据支持的目标工程适配，不能自行新增、优化或重排玩法与表现。
 

@@ -1,6 +1,6 @@
 ---
 name: create-slot
-description: 'Use when the user explicitly writes @create_slot {addr} and asks to create a new slot-fe game project from an @cc3-translated Cocos project. Resolve the translated project, derive slot-fe-{name} from a {name}_UI directory, copy the sibling template safely, migrate the approved game resources and TS3 staging output, discard TS24 code, and record conflicts and binding work under doc.'
+description: 'Use when the user explicitly writes @create_slot {addr} and asks to create a new slot-fe game project from a final @cc3-translated Cocos project. Resolve the translated project, derive slot-fe-{name} from a {name}_UI directory, copy the sibling template safely, migrate approved resources and archived TS3 evidence as target staging output, discard TS24 code, and record conflicts and binding work under doc. Continue to accept legacy @cc3 sources that still use assets/scripts_ts3.'
 ---
 
 # Create Slot Project
@@ -9,10 +9,10 @@ description: 'Use when the user explicitly writes @create_slot {addr} and asks t
 
 Create a new Cocos Creator slot project from a project already translated by the `@cc3` / `@cc3_res` workflow. Use the `addr/../../template` directory as the project base, keep template shared code intact, migrate only verified game material, and leave a reproducible migration report.
 
-Use the local toolkit as the primary migration authority:
+Resolve the local toolkit from the current `slot-fe-client` repository root and use it as the primary migration authority:
 
 ```text
-E:\CCCCCC\slot-fe-client\pg-reverse-toolkit
+<slot-fe-client>/pg-reverse-toolkit
 ```
 
 The upstream reference is:
@@ -57,7 +57,7 @@ Stop before writing when any of these conditions holds:
 
 - `addr` does not exist or is not a directory;
 - the leaf does not end in `_UI`;
-- `addr/assets/scripts_ts3` is missing;
+- both `addr/migrationArtifacts/scriptsTs3` and legacy `addr/assets/scripts_ts3` are missing;
 - `addr/../../template` is missing;
 - `addr/../../slot-fe-{name}` already exists;
 - the resolved target escapes `addr/../..` after path normalization.
@@ -81,13 +81,14 @@ Use `scripts/create_slot_project.ps1` for deterministic path validation, templat
 
 Treat the source as an `@cc3`-translated project only when it contains:
 
-- `assets/scripts_ts3/` as the Cocos 3.8.7 script staging directory;
-- `assets/scripts_ts24/` may exist as intermediate output; treat it as evidence only and discard it from the new project;
-- the original `assets/scripts/*.js` and `.js.meta` comparison boundary;
+- `assets/scripts/` with the final Cocos 3.8.7 TypeScript active and formally bound; explicitly ignored JS/CommonJS modules may remain;
+- `migrationArtifacts/scriptsTs3/` as the preferred archived TS3 evidence, or legacy `assets/scripts_ts3/` as a compatibility source;
+- `migrationArtifacts/scriptsTs24/` may exist as intermediate evidence; treat it as evidence only and discard it from the new project;
+- original JS and `.js.meta` comparison evidence under `migrationArtifacts/scriptsJs/`, or the legacy `assets/scripts/` boundary for an older staged source;
 - Cocos assets such as `assets/prefabs`, `assets/scenes`, `assets/resources`, or equivalent project asset folders;
 - `doc/<project>-operation-flow.md` containing the verified sequence diagrams and reel/board call logic required by the `@cc3` skill.
 
-Read `addr/progress.md`, `addr/task_plan.md`, `assets/scripts_ts3/TS3_MIGRATION_PROGRESS.md`, and the operation-flow document before selecting files. If `assets/scripts_ts24/` exists, record it as discarded; never use it as target code or as a formal binding input. Report missing records instead of silently treating an incomplete translation as complete.
+Read `addr/progress.md`, `addr/task_plan.md`, the resolved TS3 evidence's `TS3_MIGRATION_PROGRESS.md`, and the operation-flow document before selecting files. If TS24 evidence exists under `migrationArtifacts/scriptsTs24/` or legacy `assets/scripts_ts24/`, record it as discarded; never use it as target code or as a formal binding input. Report missing records instead of silently treating an incomplete translation as complete.
 
 ## Creation Workflow
 
@@ -97,7 +98,7 @@ Run from the resolved source project or pass `-Addr` to the helper:
 
 ```powershell
 git -C $addr status --short --untracked-files=all
-Test-Path (Join-Path $addr 'assets/scripts_ts3')
+((Test-Path (Join-Path $addr 'migrationArtifacts/scriptsTs3')) -or (Test-Path (Join-Path $addr 'assets/scripts_ts3')))
 Test-Path (Join-Path (Split-Path (Split-Path $addr -Parent) -Parent) 'template')
 Test-Path (Join-Path (Split-Path (Split-Path $addr -Parent) -Parent) ("slot-fe-$name"))
 ```
@@ -156,16 +157,17 @@ Use Cocos Creator export/import for UUID-sensitive Prefab, Material, Shader, Atl
 
 ### 4. Migrate Translated Scripts As Staging Output
 
-Copy the translated code into staging locations in the new project:
+Copy the translated code into staging locations in the new project. Prefer the final `@cc3` archive and fall back to the legacy location only for older sources:
 
 ```text
-addr/assets/scripts_ts3  -> target/assets/scripts_ts3
-addr/doc                  -> target/doc
+addr/migrationArtifacts/scriptsTs3 -> target/assets/scripts_ts3
+addr/assets/scripts_ts3             -> target/assets/scripts_ts3  # legacy fallback
+addr/doc                             -> target/doc
 ```
 
-Do not copy `addr/assets/scripts_ts24/` into the target. TS24 code is discarded for this workflow; leave the source copy untouched and record its discarded status in the migration report. The target must not create `assets/scripts_ts24/`.
+Do not copy TS24 evidence into the target. Leave the source copy untouched and record its discarded status in the migration report. The target must not create `assets/scripts_ts24/`.
 
-Do not copy `addr/assets/scripts/*.js` into the target's formal `assets/scripts` directory as an active Cocos 3 script set. Keep the original JS in the source project as the comparison boundary.
+Do not copy `addr/assets/scripts` wholesale into the target because it is already formally integrated against the source project's asset database and can conflict with template bridge/shared code. Do not copy original JS evidence into active target assets. Keep `migrationArtifacts/scriptsJs/` in the source as the comparison boundary.
 
 Keep the template's `assets/scripts/bridge` and shared framework implementation. If a translated script has the same path as a template script, classify it as one of:
 
@@ -203,7 +205,7 @@ Record:
 - bridge source, submodule commit, and required entry files;
 - selected start scene and updated builder configuration;
 - copied `scripts_ts3` status and discarded `scripts_ts24` status;
-- source JS and `.meta` preservation status;
+- source final-TS status and original JS/`.meta` evidence path;
 - identical-file skips and content conflicts;
 - whether Cocos export/import or raw copy was used;
 - formal script/class-id binding status and unresolved mappings;
@@ -227,8 +229,7 @@ Test-Path (Join-Path $target 'assets/scripts/bridge/components/i18n/LanguageData
 Test-Path (Join-Path $target 'profiles/v2/packages/web-mobile.json')
 Test-Path (Join-Path $target 'doc/create-slot-migration.md')
 Get-ChildItem $target/assets/scripts_ts3 -Filter *.ts | Measure-Object
-git -C $addr diff --name-only -- assets/scripts
-git -C $addr diff --name-only -- '*.meta'
+git -C $addr status --short --untracked-files=all
 git diff --check
 ```
 
@@ -237,6 +238,7 @@ Also verify:
 - the target leaf name is exactly `slot-fe-{name}`;
 - template files excluded from the copy are absent or freshly generated as expected;
 - no source file changed;
+- the selected TS3 source is `migrationArtifacts/scriptsTs3` when present, with legacy `assets/scripts_ts3` used only as fallback;
 - no target conflict was silently overwritten;
 - all configured start-scene entries point to `assets/scenes/main.scene` and its `.meta` UUID;
 - no migrated Scene/Prefab contains a source JavaScript script UUID when an exact TS3 `.meta` match exists;

@@ -22,6 +22,13 @@ try {
 
     & $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -PlanPath $invalidPath -SkipPathChecks
     if ($LASTEXITCODE -eq 0) { throw 'Plan without root-cause evidence was accepted' }
+
+    $invalid = Get-Content -LiteralPath $template -Raw -Encoding UTF8 | ConvertFrom-Json
+    $invalid.analysisRouting.module = 'Reel / Spin Data Contract'
+    $invalid.serverDataCheck.PSObject.Properties.Remove('rawResponse')
+    $invalid | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $invalidPath -Encoding UTF8
+    & $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -PlanPath $invalidPath -SkipPathChecks
+    if ($LASTEXITCODE -eq 0) { throw 'Turntable plan without server raw-response evidence was accepted' }
 } finally {
     Remove-Item -LiteralPath $invalidPath -Force -ErrorAction SilentlyContinue
 }

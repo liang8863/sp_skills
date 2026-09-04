@@ -23,6 +23,11 @@ function Get-NonNullCount($Value) {
     return @($Value | Where-Object { $null -ne $_ }).Count
 }
 
+function Is-ServerDataTask($Plan) {
+    $text = @($Plan.goal, $Plan.analysisRouting.module, $Plan.analysisRouting.evidence, $Plan.steps.action) -join ' '
+    return $text -match '(?i)spin|reel|slotreel|drop|cascade|peeking|layout|mask|multiplier|free.?game|bonus|respin|turntable|转盘|停轮|掉落|消除|倍率|免费|奖励'
+}
+
 try {
     $resolvedPlan = (Resolve-Path -LiteralPath $PlanPath).Path
     $plan = Get-Content -LiteralPath $resolvedPlan -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -76,6 +81,28 @@ foreach ($item in $evidence) {
     }
 }
 if ((Get-NonNullCount $resource.uncovered) -gt 0) { Add-PlanError 'resourceBaseline.uncovered must be empty' }
+
+$serverCheck = $plan.serverDataCheck
+if (Is-ServerDataTask $plan) {
+    if (-not (Has-Property $plan 'serverDataCheck')) {
+        Add-PlanError 'serverDataCheck is required for Spin/Reel/Drop/Cascade/Multiplier/Free Game/Bonus tasks'
+    } else {
+        if ($serverCheck.status -ne 'VERIFIED') { Add-PlanError 'serverDataCheck.status must be VERIFIED before planning' }
+        foreach ($field in @('scope', 'rawResponse', 'contract', 'responsibility')) {
+            if (-not (Has-Text $serverCheck.$field)) { Add-PlanError "serverDataCheck.$field must not be empty" }
+        }
+        if (@('server', 'api', 'mapper', 'client') -notcontains ([string]$serverCheck.responsibility).ToLowerInvariant()) {
+            Add-PlanError 'serverDataCheck.responsibility must be server, api, mapper, or client'
+        }
+        $serverEvidence = @($serverCheck.evidence | Where-Object { $null -ne $_ })
+        if ($serverEvidence.Count -eq 0) { Add-PlanError 'serverDataCheck.evidence must contain at least one item' }
+        foreach ($item in $serverEvidence) {
+            foreach ($field in @('source', 'observation')) {
+                if (-not (Has-Text $item.$field)) { Add-PlanError "Each serverDataCheck.evidence item requires $field" }
+            }
+        }
+    }
+}
 
 $allowedModels = @('terra', 'sol', 'gpt-5.6-terra', 'gpt-5.6-sol')
 if ($allowedModels -notcontains $plan.analysisRouting.model) {

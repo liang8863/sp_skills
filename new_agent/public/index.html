@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7f9" />
+    <title>Slot Agent · HGCS Pilot</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">SA</div>
+          <div>
+            <div class="brand-name">Slot Agent</div>
+            <div class="brand-subtitle">Evidence-driven replication workspace</div>
+          </div>
+        </div>
+        <div class="topbar-meta">
+          <span class="system-dot"><i></i> LOCAL ENVIRONMENT</span>
+          <span class="topbar-divider"></span>
+          <button class="harness-button" id="harness-button" title="连接本机 Codex App Server"><span class="harness-indicator" id="harness-indicator"></span><span id="harness-label">连接 Harness</span></button>
+          <span class="topbar-divider"></span>
+          <span class="run-id" id="run-id">NO ACTIVE RUN</span>
+          <button class="icon-button" id="refresh-button" title="刷新状态" aria-label="刷新状态">↻</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="hero-row">
+          <div>
+            <div class="eyebrow">PROJECT / PILOT</div>
+            <h1 id="project-name">HGCS · 试点项目</h1>
+            <p class="hero-copy">把证据变成可验收的 Cocos 垂直切片。</p>
+          </div>
+          <div class="hero-actions">
+            <button class="button button-quiet" id="reset-button"><span>↺</span> 重置演示</button>
+            <button class="button button-primary" id="run-button"><span>▶</span> 运行分析</button>
+          </div>
+        </section>
+
+        <section class="project-strip">
+          <div class="project-detail"><span class="detail-label">工作区</span><code id="workspace">D:\WorkSpace\slot-fe-client\games\slot-fe-hgcs</code></div>
+          <div class="project-detail"><span class="detail-label">分支</span><code id="branch">agent/preview-vertical-slice</code></div>
+          <div class="project-detail"><span class="detail-label">引擎</span><span id="engine">Cocos Creator 3.8.7</span></div>
+          <div class="status-pill status-idle" id="project-status">待分析</div>
+        </section>
+
+        <section class="metrics-grid" id="metrics"></section>
+
+        <section class="main-grid">
+          <article class="panel workflow-panel">
+            <div class="panel-heading">
+              <div><span class="section-kicker">01 / EXECUTION</span><h2>工作流进度</h2></div>
+              <span class="live-label"><i></i> <span id="run-message">等待开始</span></span>
+            </div>
+            <div class="workflow-list" id="workflow-list"></div>
+          </article>
+
+          <article class="panel approval-panel">
+            <div class="panel-heading">
+              <div><span class="section-kicker">02 / CONTROL</span><h2>审批队列</h2></div>
+              <span class="risk-badge">R2 GATE</span>
+            </div>
+            <div id="approval-list"></div>
+            <div class="approval-footnote"><span class="shield">◇</span><span>写入项目、覆盖资源和外部操作都必须经过审批。</span></div>
+          </article>
+        </section>
+
+        <section class="detail-grid">
+          <article class="panel evidence-panel">
+            <div class="panel-heading">
+              <div><span class="section-kicker">03 / TRACEABILITY</span><h2>证据流</h2></div>
+              <button class="text-button" id="evidence-button">＋ 采集示例证据</button>
+            </div>
+            <div class="evidence-list" id="evidence-list"></div>
+          </article>
+
+          <article class="panel spec-panel">
+            <div class="panel-heading">
+              <div><span class="section-kicker">04 / GAME SPEC</span><h2>规则规格</h2></div>
+              <span class="confidence" id="confidence">84% confidence</span>
+            </div>
+            <div class="state-map" id="state-map"></div>
+            <div class="spec-footer"><span><b id="open-questions">3</b> 个待验证项</span><span id="spec-updated">更新于今天 09:21</span></div>
+          </article>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="panel asset-panel">
+            <div class="panel-heading"><div><span class="section-kicker">05 / RESOURCE MAP</span><h2>资源映射</h2></div><span class="muted">hash + provenance</span></div>
+            <div class="asset-table-wrap"><table><thead><tr><th>资源</th><th>类型</th><th>引用</th><th>状态</th><th>大小</th></tr></thead><tbody id="asset-table"></tbody></table></div>
+          </article>
+          <article class="panel artifact-panel">
+            <div class="panel-heading"><div><span class="section-kicker">06 / ARTIFACTS</span><h2>运行产物</h2></div><span class="muted" id="artifact-count">18 artifacts</span></div>
+            <div class="artifact-list" id="artifact-list"></div>
+          </article>
+        </section>
+
+        <section class="activity-section">
+          <div class="activity-heading"><span class="section-kicker">RUN LOG</span><h2>活动记录</h2><span class="activity-note">所有工具调用均带 run ID 和审计记录</span></div>
+          <div class="activity-list" id="activity-list"></div>
+        </section>
+      </main>
+
+      <footer class="footer"><span>Slot Agent MVP · local-only preview</span><span>Codex adapter: ready to connect · Cocos MCP adapter: ready to connect</span></footer>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

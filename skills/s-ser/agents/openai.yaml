@@ -1,0 +1,4 @@
+interface:
+  display_name: "s_ser"
+  short_description: "Implement and verify Slot server runners from evidence to simulator seeds"
+  default_prompt: "Use $s-ser to implement and validate this Slot server runner change from evidence through simulator-ready seeds."

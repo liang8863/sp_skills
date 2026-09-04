@@ -105,6 +105,19 @@ mcp_validation:
     - "console/log status when validating Cocos implementation or QA results"
 
 agents:
+  s_ser:
+    agent_config: ".codex/agents/s-ser-agent/AGENT.md"
+    skill: "s-ser"
+    aliases:
+      - "@s_ser"
+      - "@s-ser"
+    knowledge: ".codex/agents/s-cli-agent/references/slot-function-reference.md"
+    owns:
+      - "Slot server runner implementation"
+      - "server/client response-contract validation"
+      - "deterministic seed fixture documentation"
+      - "isolated simulator acceptance"
+
   s_cli:
     agent_config: ".codex/agents/s-cli-agent/AGENT.md"
     skill: "s-cli"

@@ -117,8 +117,8 @@ function Update-SceneConfig([string]$ProjectPath, [string]$SceneUuid, [string]$T
   }
 }
 
-function Update-MigratedScriptBindings([string]$SourcePath, [string]$TargetPath) {
-  $sourceScripts = Join-Path $SourcePath "assets/scripts"
+function Update-MigratedScriptBindings([string]$SourceScriptEvidencePath, [string]$TargetPath) {
+  $sourceScripts = $SourceScriptEvidencePath
   $targetTs3 = Join-Path $TargetPath "assets/scripts_ts3"
   $assetFiles = @(Get-ChildItem (Join-Path $TargetPath "assets") -Recurse -File -Include "*.scene", "*.prefab")
   if (-not (Test-Path -LiteralPath $sourceScripts -PathType Container) -or
@@ -180,11 +180,40 @@ if (Test-Path -LiteralPath $target) {
   throw "Target already exists; refusing to overwrite: $target"
 }
 
-$sourceTs3 = Join-Path $source "assets/scripts_ts3"
-$sourceTs24 = Join-Path $source "assets/scripts_ts24"
+$archivedTs3 = Join-Path $source "migrationArtifacts/scriptsTs3"
+$legacyTs3 = Join-Path $source "assets/scripts_ts3"
+if (Test-Path -LiteralPath $archivedTs3 -PathType Container) {
+  $sourceTs3 = $archivedTs3
+  $sourceTs3Kind = "final-archive"
+} elseif (Test-Path -LiteralPath $legacyTs3 -PathType Container) {
+  $sourceTs3 = $legacyTs3
+  $sourceTs3Kind = "legacy-staging"
+} else {
+  throw "Translated TS3 output is missing; expected $archivedTs3 or $legacyTs3"
+}
+
+$archivedTs24 = Join-Path $source "migrationArtifacts/scriptsTs24"
+$legacyTs24 = Join-Path $source "assets/scripts_ts24"
+if (Test-Path -LiteralPath $archivedTs24 -PathType Container) {
+  $sourceTs24 = $archivedTs24
+} elseif (Test-Path -LiteralPath $legacyTs24 -PathType Container) {
+  $sourceTs24 = $legacyTs24
+} else {
+  $sourceTs24 = $null
+}
+
+$archivedJs = Join-Path $source "migrationArtifacts/scriptsJs"
+$legacyJs = Join-Path $source "assets/scripts"
+if (Test-Path -LiteralPath $archivedJs -PathType Container) {
+  $sourceJsEvidence = $archivedJs
+} else {
+  $sourceJsEvidence = $legacyJs
+}
+
 $sourceFlow = Join-Path $source "doc"
-if (-not (Test-Path -LiteralPath $sourceTs3 -PathType Container)) {
-  throw "Translated TS3 output is missing: $sourceTs3"
+if ($sourceTs3Kind -eq "final-archive" -and
+    -not (Test-Path -LiteralPath $archivedJs -PathType Container)) {
+  throw "Final @cc3 source is missing original JavaScript evidence: $archivedJs"
 }
 if (-not (Test-Path -LiteralPath $sourceFlow -PathType Container) -or
     -not @(Get-ChildItem -LiteralPath $sourceFlow -Filter "*operation-flow.md" -File).Count) {
@@ -192,9 +221,8 @@ if (-not (Test-Path -LiteralPath $sourceFlow -PathType Container) -or
 }
 
 $copyRoots = [System.Collections.Generic.List[string]]::new()
-$copyRoots.Add("assets/scripts_ts3")
 $copyRoots.Add("doc")
-$discardedTs24 = Test-Path -LiteralPath $sourceTs24 -PathType Container
+$discardedTs24 = $null -ne $sourceTs24
 foreach ($root in @(
     "assets/prefabs", "assets/scenes", "assets/resources", "assets/import-materials",
     "assets/materials", "assets/animations", "assets/audio", "assets/spine",
@@ -208,6 +236,23 @@ foreach ($root in @(
 $conflicts = [System.Collections.Generic.List[object]]::new()
 $identicalCount = 0
 $newFileCount = 0
+foreach ($file in @(Get-ChildItem -LiteralPath $sourceTs3 -Recurse -File)) {
+  $relativeWithinTs3 = $file.FullName.Substring($sourceTs3.Length).TrimStart("\")
+  $relative = Join-Path "assets/scripts_ts3" $relativeWithinTs3
+  $templateFile = Join-Path $template $relative
+  if (Test-Path -LiteralPath $templateFile -PathType Leaf) {
+    $sourceHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+    $templateHash = (Get-FileHash -LiteralPath $templateFile -Algorithm SHA256).Hash
+    if ($sourceHash -eq $templateHash) {
+      $identicalCount++
+    } else {
+      $conflicts.Add([pscustomobject]@{ Path = $relative; Source = $sourceHash; Template = $templateHash })
+    }
+  } else {
+    $newFileCount++
+  }
+}
+
 foreach ($root in $copyRoots) {
   $sourceRoot = Join-Path $source $root
   foreach ($file in @(Get-ChildItem -LiteralPath $sourceRoot -Recurse -File)) {
@@ -232,7 +277,9 @@ Write-Output "template=$template"
 Write-Output "target=$target"
 Write-Output "name=$name"
 Write-Output "copy-roots=$($copyRoots.Count) new-files=$newFileCount identical-files=$identicalCount conflicts=$($conflicts.Count)"
+Write-Output "scripts-ts3-source=$sourceTs3 kind=$sourceTs3Kind"
 Write-Output "scripts-ts24=discarded source-present=$discardedTs24"
+Write-Output "scripts-js-evidence=$sourceJsEvidence"
 Write-Output "bridge-source=$bridgeSource"
 
 if ($conflicts.Count) {
@@ -263,6 +310,7 @@ if ($bridgeSource -ne $templateBridge) {
 foreach ($root in $copyRoots) {
   Copy-Tree (Join-Path $source $root) (Join-Path $target $root)
 }
+Copy-Tree $sourceTs3 (Join-Path $target "assets/scripts_ts3")
 
 Update-ProjectName (Join-Path $target "package.json") $targetName
 Update-ProjectName (Join-Path $target "project.json") $targetName
@@ -278,7 +326,7 @@ if (Test-Path -LiteralPath $sourceSceneMeta -PathType Leaf) {
   Update-SceneConfig (Join-Path $target "buildConfig_web-mobile.json") $sceneUuid $templateSceneUuid
   Update-SceneConfig (Join-Path $target "profiles/v2/packages/builder.json") $sceneUuid $templateSceneUuid
   Update-SceneConfig (Join-Path $target "profiles/v2/packages/web-mobile.json") $sceneUuid $templateSceneUuid
-  Update-MigratedScriptBindings $source $target
+  Update-MigratedScriptBindings $sourceJsEvidence $target
   Write-Output "start-scene=assets/scenes/main.scene uuid=$sceneUuid"
 }
 
@@ -293,13 +341,15 @@ $reportPath = Join-Path $target "doc/create-slot-migration.md"
 - Copied roots: $($copyRoots -join ', ')
 - Bridge source: $bridgeSource
 - Start scene: assets/scenes/main.scene
-- Copied scripts_ts3: yes
+- Copied scripts_ts3: yes (source: $sourceTs3; kind: $sourceTs3Kind)
 - Copied scripts_ts24: no (discarded; source present: $discardedTs24)
+- Original JavaScript evidence: $sourceJsEvidence
 - New files: $newFileCount
 - Identical files skipped by hash: $identicalCount
 - Conflicts: 0
-- Original ``assets/scripts/*.js`` copied as active target scripts: no
-- Formal Cocos script binding: mapped exact source JavaScript .meta UUIDs to matching TS3 .meta UUIDs in scenes/prefabs
+- Source formal ``assets/scripts`` copied wholesale: no
+- Original JavaScript evidence copied as active target scripts: no
+- Cocos script binding: preserved existing class ids when archived TS3 UUIDs match final source UUIDs; mapped only exact full source JavaScript UUID ``__type__`` values when a TS3 meta UUID differs
 - Runtime Spin verification: pending
 
 The target was created from the sibling template. UUID-sensitive resources must be validated through Cocos Creator import/editor processing before formal binding changes.

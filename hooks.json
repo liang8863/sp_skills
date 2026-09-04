@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"E:\\CCCCCC\\slot-fe-client\\.codex\\hooks\\cleanup-playwright-chrome.ps1\"",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"& (Join-Path (git rev-parse --show-toplevel).Trim() '.codex/hooks/cleanup-playwright-chrome.ps1')\"",
             "timeout": 10
           },
           {

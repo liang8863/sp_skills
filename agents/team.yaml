@@ -23,6 +23,12 @@ failure_fallbacks:
   cocos-not-pass: "cocos-man-agent reports failure to PM -> PM dispatches doc/asset/resources -> PM re-gates -> cocos-man-agent -> qa-man-agent"
 
 agents:
+  s-ser-agent:
+    config: "./s-ser-agent/AGENT.md"
+    skill: "s-ser"
+    aliases: "@s_ser, @s-ser"
+    role: "evidence-driven Slot server runner implementation and simulator acceptance"
+
   s-cli-agent:
     config: "./s-cli-agent/AGENT.md"
     skill: "s-cli"

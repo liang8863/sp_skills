@@ -1,5 +1,7 @@
 ﻿### 3.4 Reel / SlotReel / 布局
 
+本文件只提供 Reel 取证问题、边界检查和验收维度。下面的术语与流程用于建立假设并寻找证据，不是目标游戏的默认规则；实际列数、行数、阈值、索引、停轮顺序、咪牌、slow-drop、动画和 callback 必须由目标项目的 `{gameId}_res`、`doc/js_scripts` 与协议/运行时证据共同确认。`doc/project_info.md` 只确认 gameId 与竞品网址身份，不是外部取证入口。
+
 **必须分开的能力**
 
 1. 服务端布局格式和客户端布局格式。
@@ -74,15 +76,19 @@
 - 未达成时，最后一颗新牌落地后要关闭 ONE_MORE、遮罩、心跳和降音量；达成时也必须在 FG 转场接管前完成 Reel 层清理。
 - 新一轮 Cascade、新 Spin、Turbo、急停、节点销毁或异常中断，都必须有幂等清理路径。
 
-#### 3.4.4 项目差异与当前证据
+#### 3.4.4 目标项目本地证据矩阵
 
-| 项目 | 普通 Spin | Cascade / 掉落咪牌 | 需求分析时必须确认 |
-| --- | --- | --- |
-| YJZR | `YjzrSlotReelMgrHooks` 在 `startPeekingIndex != 0` 且当前停轮已到咪牌前一列时，向下一列开启 `PeekingStart`、遮罩、镜头和 `miRotate`；全部停轮后统一 `PeekingStop` | 清除阶段按每列可见区统计残留 Scatter，记录第 2 个 Scatter 所在列；`R >= 2` 且本 Spin 尚未完成 slow-drop 时武装表演，同一 Spin 只完成一次，`dropOver()` 调用 `finishCascadePeeking()` 收尾 | `GameConfig.scatterTriggerCount=4`，但 `YjzrPerformanceCtrl` 当前以 `T=3`、`ONE_MORE=2` 判定 FG 表演；两者语义/来源存在冲突，计划必须先确认服务端真实规则及框架配置用途，不能任选一个。前端可见行配置当前为 `5/6/6/6/6`，不是可直接泛化的固定 5x6 |
-| JDSRY | `T=3`；按已经停下的列累计 `seen(i)`，达到 `>=3` 即切一次 Free Spin Won。咪牌从 `startPeekingIndex-1` 停轮后开始，逐列移动高亮，最后一列结束 | `SLOW_DROP_MIN_SCATTER=2`。`R>=2` 进入 slow-drop；只有 `R==2` 显示 ONE_MORE、降 BGM、残留 Scatter 心跳后再释放新牌，`R>=3` 直接释放。新 Scatter 每次真实落地后累加，`R+landed>=3` 设单次达成 flag；全部列落地计数满足后才继续 | `JdsryReelLayout.ts` 为 5 轴、可见行 `3/4/5/4/3`、19 格、720 ways；compact index、倍率编码和变高行数必须沿用该项目转换，不能套用 YJZR 坐标 |
+逐行填写目标项目的真实路径与结论。资源和旧脚本只能互相补强，不能互相替代；任何会影响实现的空白或矛盾都标记为 `UNKNOWN`，并停止为 `NEEDS_LOCAL_REFERENCE`。
 
-YJZR 的阈值冲突不是速查表替项目作出的结论，而是 `s_cli` 必须产出的一个显式核对项：响应协议触发条件、服务端 seed、框架 `startPeekingIndex`、InfoBoard/FG 表演阈值必须一致后才能进入实现。
-
+| 待确认事实 | `{gameId}_res` 证据 | `doc/js_scripts` 证据 | 协议/运行时交叉验证 | 结论 |
+| --- | --- | --- | --- | --- |
+| Reel 列数、各列可见行、隐藏缓冲与 SymbolView 数 | Scene/Prefab 节点路径、尺寸、mask、序列化数组 | 布局初始化与 view 建立调用链 | raw layout 长度、拆列日志、边界格画面 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| raw/compact index 到列行与世界坐标的转换 | Reel/Symbol 父节点、anchor、spacing、特效挂点 | layout helper、索引转换与 symbol id 解析 | 首尾 index、变高列、特殊符号定位 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 普通 Spin 的停轮、咪牌与达成条件 | 遮罩、光柱、Scatter holder、动画与音频对象 | 单列停轮、累计计数、状态切换、完成与清理 callback | 可复现 seed 下的逐列日志和画面 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Cascade/drop 的残留统计、补位、slow-drop 与完成条件 | drop 路径资源、overlay、目标格与落地动画 | 清除快照、pending/landed 计数、完成屏障与 guard | 每列待补/已落地数、阶段事件时间线 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Scatter/Bonus 真正门槛及 ONE_MORE 语义 | 提示资源和状态对象只能证明表现能力 | 比较条件、配置读取点和状态机 | raw 响应的奖励次数、runner 契约和边界 seed | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Normal/Turbo/急停/Auto 的差异 | 各模式可用动画与初始状态 | 分支条件、时长来源、共用判定和清理入口 | 相同响应在各模式的结果与 callback 次数 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 新 Spin、切模式、销毁与异常中断清理 | 节点初始 active/opacity、音频和 VFX 归属 | tween/schedule/listener/token 的释放路径 | 连续重放后无视觉、音频或状态残留 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
 #### 3.4.5 最低验收用例
 
 | ID | 输入/操作 | 通过标准 |

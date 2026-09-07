@@ -23,6 +23,12 @@ failure_fallbacks:
   cocos-not-pass: "cocos-man-agent reports failure to PM -> PM dispatches doc/asset/resources -> PM re-gates -> cocos-man-agent -> qa-man-agent"
 
 agents:
+  s-init-agent:
+    config: "./s-init-agent/AGENT.md"
+    skill: "s-init"
+    aliases: "@s_init, @s-init, $s-init"
+    role: "client-owned Slot initialization and sequential server/client goal orchestration"
+
   s-ser-agent:
     config: "./s-ser-agent/AGENT.md"
     skill: "s-ser"
@@ -32,9 +38,9 @@ agents:
   s-cli-agent:
     config: "./s-cli-agent/AGENT.md"
     skill: "s-cli"
-    analysis_models: "terra(default), sol(direct Reel or Free Game/Bonus work)"
+    analysis_model: "terra"
     execution_model: "luna"
-    role: "resource-project-driven Slot client implementation orchestrator"
+    role: "target-local-reference-driven Slot client implementation orchestrator"
 
   pm-agent:
     config: "./pm-agent/AGENT.md"

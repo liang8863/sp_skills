@@ -1,0 +1,7 @@
+interface:
+  display_name: "Slot Replication Init"
+  short_description: "Plan, sample, detail, then run Slot replication"
+  default_prompt: "Use $s-init to prepare the full-stack roadmap, sample the competitor for separate client and server detailed plans, then complete the server goal before client implementation."
+
+policy:
+  allow_implicit_invocation: false

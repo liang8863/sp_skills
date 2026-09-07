@@ -1,0 +1,48 @@
+[Fx] PROVIDE	fx.Lifecycle <= go.uber.org/fx.New.func1()
+[Fx] PROVIDE	fx.Shutdowner <= go.uber.org/fx.(*App).shutdowner-fm()
+[Fx] PROVIDE	fx.DotGraph <= go.uber.org/fx.(*App).dotGraph-fm()
+[Fx] PROVIDE	config.Config[name = "raw"] <= fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.loadConfig(), fx.ResultTags(["name:\"raw\""])
+[Fx] PROVIDE	config.Config <= fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.parseSecret(), fx.ParamTags(["name:\"raw\""])
+[Fx] PROVIDE	config.EnvParams <= github.com/jp-sunshine/slot-be-games-ways/boot.loadEnvParams()
+[Fx] PROVIDE	logger.Logger <= github.com/jp-sunshine/slot-be-games-ways/boot.newLogger()
+[Fx] PROVIDE	*database.Registry <= github.com/jp-sunshine/slot-be-games-ways/boot.newDatabaseRegistry()
+[Fx] PROVIDE	*config.RedisPool <= github.com/jp-sunshine/slot-be-games-ways/boot.newRedis()
+[Fx] PROVIDE	gamesmgtpb.SrvGamesMgtClient <= github.com/jp-sunshine/slot-be-games-ways/boot.newGamesMgtClient()
+[Fx] PROVIDE	*services.Services <= github.com/jp-sunshine/slot-be-games-ways/boot.newGameCenterService()
+[Fx] PROVIDE	*engine.SlotGameEngine <= github.com/jp-sunshine/slot-be-games-ways/boot.providers.newSlotSdkV3.func1()
+[Fx] PROVIDE	*rest.BetAmountsHandler <= github.com/jp-sunshine/slot-be-games-ways/boot.newBetAmountsHandler()
+[Fx] PROVIDE	*http.Server <= github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2()
+[Fx] PROVIDE	*grpc.Server <= github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer()
+[Fx] INVOKE		github.com/jp-sunshine/slot-be-games-ways/boot.Run.func1()
+[Fx] BEFORE RUN	provide: go.uber.org/fx.New.func1()
+[Fx] RUN	provide: go.uber.org/fx.New.func1() in 0s
+[Fx] BEFORE RUN	provide: fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.loadConfig(), fx.ResultTags(["name:\"raw\""])
+[Fx] RUN	provide: fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.loadConfig(), fx.ResultTags(["name:\"raw\""]) in 1.559ms
+[Fx] BEFORE RUN	provide: fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.parseSecret(), fx.ParamTags(["name:\"raw\""])
+[Fx] RUN	provide: fx.Annotate(github.com/jp-sunshine/slot-be-games-ways/boot.parseSecret(), fx.ParamTags(["name:\"raw\""]) in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.loadEnvParams()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.loadEnvParams() in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newLogger()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newLogger() in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newRedis()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newRedis() in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newDatabaseRegistry()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newDatabaseRegistry() in 4.8627ms
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.providers.newSlotSdkV3.func1()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.providers.newSlotSdkV3.func1() in 34.5825ms
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGamesMgtClient()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGamesMgtClient() in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGameCenterService()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGameCenterService() in 543.2µs
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newBetAmountsHandler()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newBetAmountsHandler() in 0s
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2() in 1.5436ms
+[Fx] BEFORE RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer()
+[Fx] RUN	provide: github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer() in 0s
+[Fx] HOOK OnStart		github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2.1() executing (caller: github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2)
+[Fx] HOOK OnStart		github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2.1() called by github.com/jp-sunshine/slot-be-games-ways/boot.providers.newHttpServer.func2 ran successfully in 0s
+[Fx] HOOK OnStart		github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer.func1() executing (caller: github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer)
+[Fx] HOOK OnStart		github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer.func1() called by github.com/jp-sunshine/slot-be-games-ways/boot.newGrpcServer ran successfully in 0s
+[Fx] RUNNING
+exit status 0xffffffff

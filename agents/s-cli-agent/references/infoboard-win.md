@@ -1,6 +1,8 @@
 ﻿### 3.5 InfoBoard / 跑马灯 / Win / Total Win
 
-InfoBoard 应视为一个小型显示状态机，而不是“一个数字 Label”。常见能力包括：
+本文件只提供取证问题和验收维度，不定义目标游戏的模式名称、职责拆分、金额来源、资源组合或播放顺序。所有行为事实都必须回到目标项目的 `{gameId}_res`、`doc/js_scripts` 与协议/运行时证据确认；`doc/project_info.md` 只确认 gameId 与竞品网址身份，不是外部取证入口。
+
+InfoBoard 应视为一个需要取证的小型显示状态机，而不是预设成“一个数字 Label”。待确认能力包括：
 
 | 能力 | 输入 | 验收重点 |
 | --- | --- | --- |
@@ -12,13 +14,16 @@ InfoBoard 应视为一个小型显示状态机，而不是“一个数字 Label�
 | Total Win | FG 结束或完整 Spin 结算 | total amount、滚动/静态、收集/跳过、退场、BGM/UI 恢复 |
 | 模式切换 | 任意显示请求 | 互斥、skip、turbo、打断 callback、旧 tween/schedule/VFX 清理 |
 
-**JDSRY 参考**
+**目标项目本地证据矩阵**
 
-`InfoBoardControllerBase` 定义了 `TIPS`、`ONE_MORE_SCATTER`、`FREE_SPIN_WON`、`WIN_AMOUNT`、`TOTAL_WIN_AMOUNT` 等模式；`HbfyInfoBoardController` 还处理底板级别、数字滚动、粒子、倍率/收集 VFX 和语言刷新。
-
-**YJZR 参考**
-
-`InfoboardController`、`InfoboardMessageController`、`TotalWinController` 分担跑马灯/消息、Win 数字和 Total Win 收集流程，不能因为类名不同就认为功能不存在。
+| 待确认事实 | `{gameId}_res` 证据 | `doc/js_scripts` 证据 | 协议/运行时交叉验证 | 结论 |
+| --- | --- | --- | --- | --- |
+| 本地实际显示模式及互斥关系 | holder、Label、Sprite、动画、粒子和初始状态 | mode 定义、切换入口、优先级和打断逻辑 | 逐模式触发画面与 current state 日志 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 跑马灯、Win 数字与 Total Win 的职责拆分 | 各节点父路径、组件绑定和资源归属 | 事件消费者、金额入口、callback 调用链 | 同一结果的显示顺序与 callback 次数 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| frame、Cascade、Spin 与 FG 金额快照 | 资源只能证明显示能力，不证明金额语义 | 读取字段与快照保存位置 | raw response、mapper 结果与屏幕金额 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 文案、字体、atlas、底板与语言刷新 | 本地资源键、font/atlas、SizeMode 和绑定 | i18n key、语言事件和刷新路径 | 各语言运行时画面 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 数字滚动、VFX、音频与完成时点 | clip、Spine、粒子、AudioClip 和 Animation Event | tween/schedule、播放入口、完成 callback | 运行时时间线与唯一完成事件 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Skip、重复事件、新 Spin 与销毁清理 | 初始 active/opacity 和资源拥有关系 | guard、token、listener、tween 与 schedule 清理 | 重放后无残留且下一阶段只推进一次 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
 
 **InfoBoard 验收模板**
 

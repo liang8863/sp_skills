@@ -2,6 +2,8 @@
 
 #### 3.7.1 定义与状态
 
+本文件只提供 Free Game/Bonus 的取证问题、状态覆盖和验收维度。术语、状态图与阶段表是分析清单，不代表目标游戏一定存在对应节点、面板、阶段或顺序；真实门槛、次数语义、资源层级、callback 和时序只能由目标项目的 `{gameId}_res`、`doc/js_scripts` 与协议/运行时证据确认。`doc/project_info.md` 只确认 gameId 与竞品网址身份，不是外部取证入口。
+
 | 名称 | 定义 |
 | --- | --- |
 | FG Trigger | Normal Spin 的最终结果确认获得免费次数；Scatter 数只是一项校验，真正次数和模式必须以服务端响应为准 |
@@ -16,8 +18,8 @@
 
 夺宝（Scatter/Bonus）达到 2 个以上时必须进入触发矩阵，但不能把“2 个”直接写死为所有项目的 FG 进入门槛：
 
-- `0/1/2/实际门槛/超过门槛` 都要有 seed 或响应。2 个常见含义是 ONE_MORE、咪牌或掉落咪牌起点；是否直接进入 FG 必须由资源工程表现、服务端次数字段和最终响应共同确认。
-- 当前 JDSRY 的实际 FG 门槛为 3；YJZR 表现代码使用 3、配置另有 4 的冲突证据。Agent 必须把冲突列为阻塞核对项，不能根据“通常 2 个以上”自行选择。
+- `0/1/2/实际门槛/超过门槛` 都要有 seed 或响应。2 个常见含义是 ONE_MORE、咪牌或掉落咪牌起点；是否直接进入 FG 必须由本地 `{gameId}_res`/`doc/js_scripts` 行为、服务端次数字段和最终响应共同确认。
+- 如果资源表现、旧脚本条件、配置与服务端授予结果不一致，必须逐项记录本地来源并标记 `CONFLICT`；在协议和运行时证据消除冲突前，不能自行选择门槛。
 - 服务端已经授予免费次数时，前端必须进入 FG；只看到足够图标但服务端未授予时，记录协议/资源不一致，不由客户端伪造次数。
 
 建议将 Free Game 明确为以下状态：
@@ -40,22 +42,22 @@ NORMAL
 
 #### 3.7.2 Scene 资源层级、专用界面与命名
 
-Free Game 不是只切一个 `isFG`。需求拆解必须逐项找到资源工程中的专用节点，并按原父节点路径、Sibling 顺序、坐标、尺寸、active 初值和组件引用放入目标 Scene：
+Free Game 不是只切一个 `isFG`。需求拆解必须逐项找到 `assets/resources/{gameId}_res/` 中的专用节点，并按本地 Prefab 的父节点路径、Sibling 顺序、坐标、尺寸、active 初值和组件引用放入目标 Scene：
 
 | 职责 | 常见资源/节点 | Scene 与表现要求 |
 | --- | --- | --- |
-| 入场 Loading | `bonus_loading_controller`；历史工程也要搜索 `bouns_*` | 位于 Reel、InfoBoard 和操作区之上，能够遮住切换过程并拦截输入；保留资源工程的入场、停留、退场和两阶段 callback |
-| FG 转盘背景 | `bonus_background_controller`、`background_controller/bonus_bg` | 放在资源工程指定的 Reel 背景层；Loading 遮挡期间切换，不能盖住 Symbol 或错误留在 Normal |
-| FG 转盘前景 | `bonus_foreground_controller`、`foreground_controller/bonus_ui` | 保持资源工程相对 Reel、VFX、InfoBoard 的前后顺序，不得因重挂父节点改变遮罩和坐标 |
+| 入场 Loading | `bonus_loading_controller`；`{gameId}_res` 内也要搜索 `bouns_*` | 位于 Reel、InfoBoard 和操作区之上，能够遮住切换过程并拦截输入；保留本地竞品参考的入场、停留、退场和两阶段 callback |
+| FG 转盘背景 | `bonus_background_controller`、`background_controller/bonus_bg` | 放在本地 Prefab 指定的 Reel 背景层；Loading 遮挡期间切换，不能盖住 Symbol 或错误留在 Normal |
+| FG 转盘前景 | `bonus_foreground_controller`、`foreground_controller/bonus_ui` | 保持本地 Prefab 相对 Reel、VFX、InfoBoard 的前后顺序，不得因重挂父节点改变遮罩和坐标 |
 | 次数/重触发 | `free_spin_controller`、`freespin_remaining_controller`、Retrigger/Start Panel | 显示初始、剩余和新增次数；数字、标题、动画与服务端字段同步，Normal/Restore/Exit 状态正确 |
-| FG InfoBoard | `infoboard_controller` 的 FG tips/message/holder | 有独立的 ONE_MORE、FREE SPIN WON、剩余次数、FG Win/Total Win 词条；字体、atlas、描边、字号和语言切换以资源工程为准 |
-| 最终结算 | `total_win_controller` 或资源工程的 FG Payout Panel | 位于游戏层之上的独立结算界面，显示整段 FG 累计赢分及资源工程要求的总授予次数；不得复用单轮 Big Win 金额 |
+| FG InfoBoard | `infoboard_controller` 的 FG tips/message/holder | 有独立的 ONE_MORE、FREE SPIN WON、剩余次数、FG Win/Total Win 词条；字体、atlas、描边、字号和语言切换以本地竞品参考为准 |
+| 最终结算 | `total_win_controller` 或 `{gameId}_res` 的 FG Payout Panel | 位于游戏层之上的独立结算界面，显示整段 FG 累计赢分及本地 `doc/js_scripts` 要求的总授予次数；不得复用单轮 Big Win 金额 |
 
 命名只用于发现资源，不用于猜测实现：
 
-- 成品工程常见正确拼法是 `bonus_*`；旧资源可能使用 `bouns_*`。扫描时两种都查，落地时原样保留资源工程的 Prefab、节点名、UUID、组件类和属性引用，不擅自纠正拼法。
+- 本地资源常见正确拼法是 `bonus_*`；旧资源可能使用 `bouns_*`。扫描时两种都查，落地时原样保留 `{gameId}_res` 的 Prefab、节点名、UUID、组件类和属性引用，不擅自纠正拼法。
 - 资源存在不等于已接入。必须确认 Prefab 实例已放入 Scene、Controller 属性已绑定、运行时会切 active/opacity，并且入场、Restore、Retrigger、结算和退出都能到达。
-- Scene 层级必须从资源工程的 Scene/Prefab 实例取证，不能仅凭文件名把所有 Bonus 节点统一挂到 Canvas 根节点。
+- Scene 层级必须从 `{gameId}_res` 的 Scene/Prefab 和 `doc/js_scripts` 的绑定逻辑取证，不能仅凭文件名把所有 Bonus 节点统一挂到 Canvas 根节点。
 - FG 专用字体和词条必须核对真实 font/atlas/i18n 路径及中英文画面；禁止用系统字体、临时文字或 Normal InfoBoard 词条替代。
 
 #### 3.7.3 正常入场流程
@@ -101,7 +103,7 @@ FG Round 最终结果
 
 Retrigger 必须满足：
 
-- `addedCount` 使用服务端真实增量。JDSRY 当前终局计算为 `remainingAfter - remainingBefore + 1`，因为终局结果已扣掉本轮一次；该公式不能泛化到协议字段语义不同的项目。
+- `addedCount` 使用服务端真实增量。必须先确认目标协议的 remaining 字段是在本轮扣减前还是扣减后取值，再从本地脚本找到对应读取或计算逻辑；通用文件不提供默认公式。
 - Scatter 达标可作为协议一致性校验，但不能替代服务端增加次数。
 - Retrigger 面板与计数器通常并行，必须建立完成屏障；任一未完成都不能提前继续。
 - 同一 pending retrigger 只消费一次；播放前或完成后要清零，避免在 `onRoundEnd` 重播。
@@ -124,12 +126,19 @@ Retrigger 必须满足：
 - `remainingCount` 是剩余次数，不一定等于最初总次数；服务端没有总次数时，Total Win 文案需定义 fallback。
 - Restore 完成事件只在所有必要 UI/布局状态就绪后派发一次。
 
-#### 3.7.7 项目差异与当前证据
+#### 3.7.7 目标项目本地证据矩阵
 
-| 项目 | 正常入场 | Retrigger / 结束 | Restore |
-| --- | --- | --- | --- |
-| YJZR | `FREE_GAME_START` 设置 `isFreeGame`、切 FG 跑马灯、隐藏 Feature Buy；`BonusLoadingController.show()` 后打开 FG Start Panel，面板 callback 才执行真实 `spin` | 最后一轮当前顺序为 Multiplier Combine -> InfoBoard Total Payout -> `endFg()` -> FG Payout Panel -> Normal UI/round end | `LAST_SPIN_RESTORE` 检查 `result.isFree`，调用 `restoreFG(spinChance)`、切 FG InfoBoard、恢复倍率与 Reel 布局，然后发送 restore complete；不走正常入场 |
-| JDSRY | `FreeGameControllerBase` 明确使用两阶段 BonusLoading：`onPanelReady` 切背后 UI，`onClose` 执行首轮 Spin；FG BGM 与转场同步开始 | Retrigger 面板和 Remaining +N 并行，二者完成才继续；FG End 打开 Total Win，0 赢分直接 callback，Normal BGM 在 Total Win 真结束后恢复 | `restoreFreeGame(remainingCount)` 直接设置 `_isFG`、FG UI、Remaining、背景/Footer 和 FG BGM；当前资源还需保证 `free_spin_controller` active 与次数同步 |
+逐行填写真实本地路径、对象和结论。单独看到资源或单独看到方法名都不足以证明完整行为；任何影响实现的空白或矛盾都标记为 `UNKNOWN` / `CONFLICT`，并停止为 `NEEDS_LOCAL_REFERENCE`。
+
+| 待确认事实 | `{gameId}_res` 证据 | `doc/js_scripts` 证据 | 协议/运行时交叉验证 | 结论 |
+| --- | --- | --- | --- | --- |
+| FG 真正触发条件与初始授予次数 | Scatter/Bonus、提示与入场资源只能证明表现能力 | 条件比较、配置读取和事件入口 | raw response 次数字段、runner 契约、边界 seed | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 正常入场阶段、遮挡点与首轮 Spin 责任 | Loading、Start、背景/前景、操作区的节点层级与动画 | 事件到面板、背后切换、关闭和 Spin action 的 callback 链 | 运行时画面、请求次数和阶段日志 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 每轮扣次、Auto/Turbo 与下一轮推进 | Remaining/计数动画和 FG 专用 UI | 快照、更新时点、round complete 与自动继续条件 | remaining 前后值、请求与表现完成顺序 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Retrigger 条件、`addedCount` 与完成屏障 | Retrigger 面板、Remaining +N、音效和初始状态 | 增量来源、pending guard、多 callback 汇合与清理 | raw 次数变化、面板/计数器日志、下一轮请求 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 最后一轮、单轮大奖与 FG Total Win/退出交接 | Total Win/Payout、背景、InfoBoard、Control 节点层级 | 金额来源、播放顺序、BGM 责任和唯一完成 callback | 最后一轮响应、运行时时间线和下一 Normal Spin | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| Restore 的布局、次数、累计值与 UI 恢复 | FG 各节点初始/恢复状态与资源绑定 | restore 入口、赋值顺序、禁止重播项和完成事件 | 恢复响应、无额外 Spin 请求、一次就绪日志 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
+| 语言、异常中断、退出与销毁清理 | font/atlas/i18n、VFX/Audio、active/opacity 初值 | listener/tween/schedule/token 和 BGM 清理 | 切语言、断线、销毁及连续重放 | `VERIFIED` / `CONFLICT` / `UNKNOWN` |
 
 #### 3.7.8 最低验收用例
 
@@ -149,12 +158,12 @@ Retrigger 必须满足：
 | FG-12 | FG 内触发 Big Win 后结束 | Popup 恢复 FG BGM；真正 FG Exit 后才恢复 Normal BGM |
 | FG-13 | FG 中切语言、Turbo、Auto 或急停 | 本地化资源更新，状态与次数不变，不破坏 callback 链 |
 | FG-14 | 退出后立即开始 Normal Spin | Feature Buy、ControlPanel、InfoBoard、footer、背景、倍率和按钮均已恢复，无 FG VFX/SFX 残留 |
-| FG-15 | 分别输入 0、1、2、实际门槛和超过门槛个夺宝 | 2 个时按资源工程进入 ONE_MORE/咪牌或 FG；实际门槛与服务端授予次数一致，不提前、不漏触发 |
-| FG-16 | 正常入场并检查运行时 Scene | Loading、FG 背景/前景、次数面板、InfoBoard、Start/Payout/Total Win 的父节点、Sibling 顺序、active 和组件引用均与资源工程一致 |
+| FG-15 | 分别输入 0、1、2、实际门槛和超过门槛个夺宝 | 2 个时按本地竞品参考进入 ONE_MORE/咪牌或 FG；实际门槛与服务端授予次数一致，不提前、不漏触发 |
+| FG-16 | 正常入场并检查运行时 Scene | Loading、FG 背景/前景、次数面板、InfoBoard、Start/Payout/Total Win 的父节点、Sibling 顺序、active 和组件引用均与本地竞品参考一致 |
 | FG-17 | Loading 遮挡期间切换 FG 转盘背景与前景 | 主画面不露出半套 Normal/FG UI；Loading 拦截输入，退场后 Reel、Symbol、VFX 的前后层级正确 |
-| FG-18 | FG 中切换中英文并触发 ONE_MORE、FREE SPIN WON、次数和 Total Win | 使用资源工程对应词条、font/atlas、描边和字号；无缺字、系统字体替代或 Normal 文案串入 |
+| FG-18 | FG 中切换中英文并触发 ONE_MORE、FREE SPIN WON、次数和 Total Win | 使用 `{gameId}_res` 对应词条、font/atlas、描边和字号；无缺字、系统字体替代或 Normal 文案串入 |
 | FG-19 | 最后一轮含单轮 Big Win 后进入最终结算 | 先完成单轮大奖，再显示独立 FG Total Win/Payout Panel；金额、总次数、BGM 和退出 callback 不混用 |
-| FG-20 | 资源工程含 `bonus_*` 或 `bouns_*` 命名 | 两种拼法都能被盘点；目标 Scene 保留资源工程原名、UUID、组件绑定和引用，不因重命名导致失联 |
+| FG-20 | `{gameId}_res` 含 `bonus_*` 或 `bouns_*` 命名 | 两种拼法都能被盘点；目标 Scene 保留本地资源原名、UUID、组件绑定和引用，不因重命名导致失联 |
 
 #### 3.7.9 验收证据
 
@@ -163,7 +172,7 @@ Retrigger 必须满足：
 - 记录 `FREE_GAME_START/LAST_SPIN_RESTORE/FREE_GAME_END` 或等价事件，以及 BonusLoading 两阶段 callback、首轮 Spin 请求和完成事件顺序。
 - 运行时核对 BonusLoading、Remaining、Start/Payout Panel、InfoBoard、ControlPanel、Feature Buy、背景/Footer/倍率节点的 active/opacity/数值。
 - 核对 Normal/FG/BigWin/TotalWin BGM 切换、控制台错误和 callback 次数；FG 结束后的下一笔 Normal Spin 必须可操作。
-- 保存资源工程与目标工程的 Scene 节点路径、Sibling 顺序、Prefab/UUID/组件属性绑定，以及 `bonus_*`/`bouns_*` 搜索结果。
+- 保存 `{gameId}_res` 与目标运行时的 Scene 节点路径、Sibling 顺序、Prefab/UUID/组件属性绑定，以及 `bonus_*`/`bouns_*` 搜索结果。
 - 保存 FG Loading、转盘背景/前景、InfoBoard 专用词条与字体、最终结算界面的中英文运行时画面。
 
 

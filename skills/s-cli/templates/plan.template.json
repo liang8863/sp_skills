@@ -1,7 +1,7 @@
 {
-  "version": 1,
-  "taskId": "20260810-game-feature",
-  "project": "E:/CCCCCC/slot-fe-client/games/game",
+  "version": 2,
+  "taskId": "20260906-game-feature",
+  "project": "D:/WorkSpace/slot-fe-client/games/slot-fe-game",
   "goal": "Describe the requested behavior",
   "rootCause": {
     "status": "VERIFIED",
@@ -17,16 +17,28 @@
       "A symptom-level or disproven alternative"
     ]
   },
-  "resourceBaseline": {
+  "localReference": {
     "status": "VERIFIED",
-    "project": "E:/CCCCCC/slot-fe-client/games/game_UI",
-    "feature": "Matched resource-project feature",
+    "replicationId": "game",
+    "metadataGameId": "game",
+    "resourceRoot": "assets/resources/game_res",
+    "scriptsRoot": "doc/js_scripts",
+    "projectInfo": "doc/project_info.md",
+    "feature": "Matched local competitor feature",
     "evidence": [
       {
-        "source": "assets/scripts/source-controller.js#method",
+        "kind": "legacy-script",
+        "source": "doc/js_scripts/SourceController.js#method",
         "target": "assets/scripts/TargetController.ts#method",
-        "behavior": "Observable resource-project behavior",
+        "behavior": "Observable competitor behavior archived in the target project",
         "adaptation": "Compatibility mapping without behavior changes"
+      },
+      {
+        "kind": "resource",
+        "source": "assets/resources/game_res/load_res/feature.prefab",
+        "target": "assets/resources/game_res/load_res/feature.prefab",
+        "behavior": "Prefab, animation, audio, material, and serialized binding contract",
+        "adaptation": "Use the imported local resource without an external-project fallback"
       }
     ],
     "uncovered": []
@@ -53,7 +65,13 @@
     ]
   },
   "constraints": [
-    "Use resourceBaseline as the observable behavior source",
+    "Use only localReference paths for competitor behavior evidence",
+    "Require at least one resource and one legacy-script behavior evidence item; project-info is metadata only",
+    "Use replicationId and metadataGameId as separate fields; never emit legacy localReference.gameId",
+    "Keep path-like serverDataCheck artifacts target-project-relative and free of reparse points or external locators",
+    "Derive the target project and taskId from <project>/doc/s_cli/<task-id>/plan.json",
+    "Ignore external-project fields in project_info and do not follow competitorUrl for additional evidence",
+    "Do not inspect or depend on an external resource project",
     "Do not modify files outside affectedFiles"
   ],
   "baseline": {
@@ -76,11 +94,11 @@
     }
   ],
   "acceptance": [
-    "The target behavior matches the resource project",
+    "The target behavior matches the verified local competitor reference",
     "No files outside affectedFiles are modified"
   ],
   "stopConditions": [
-    "Resource evidence is missing or contradicted",
+    "Local competitor evidence is missing or contradicted",
     "Implementation requires an undeclared file"
   ]
 }

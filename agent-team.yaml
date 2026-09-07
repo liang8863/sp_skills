@@ -105,6 +105,23 @@ mcp_validation:
     - "console/log status when validating Cocos implementation or QA results"
 
 agents:
+  s_init:
+    agent_config: ".codex/agents/s-init-agent/AGENT.md"
+    skill: "s-init"
+    aliases:
+      - "@s_init"
+      - "@s-init"
+      - "$s-init"
+    knowledge: ".codex/agents/s-cli-agent/references/slot-function-reference.md"
+    owns:
+      - "target client initialization inventory"
+      - "missing runner clone gate"
+      - "server base-code readiness gate"
+      - "client-owned full-stack replication roadmap"
+      - "targeted competitor sampling for client and server detail"
+      - "separate client and server detailed replication plans"
+      - "sequential server then client implementation goals"
+
   s_ser:
     agent_config: ".codex/agents/s-ser-agent/AGENT.md"
     skill: "s-ser"
@@ -123,13 +140,13 @@ agents:
     skill: "s-cli"
     analysis_models:
       default: "terra"
-      reel: "sol"
-      free_game: "sol"
+      reel: "terra"
+      free_game: "terra"
     execution_model: "luna"
     knowledge: ".codex/agents/s-cli-agent/references/slot-function-reference.md"
     owns:
       - "Slot client requirement analysis"
-      - "resource-project behavior mapping"
+      - "target-local competitor behavior mapping"
       - "validated plan execution"
       - "implementation verification"
 

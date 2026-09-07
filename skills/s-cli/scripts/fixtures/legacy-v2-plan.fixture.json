@@ -1,0 +1,81 @@
+{
+  "version": 2,
+  "taskId": "__TASK_ID__",
+  "project": "__PROJECT__",
+  "goal": "Replicate the evidenced status display",
+  "rootCause": {
+    "status": "VERIFIED",
+    "statement": "The target status display does not consume the archived state",
+    "boundary": "TargetController status update",
+    "evidence": [
+      {
+        "source": "assets/scripts/TargetController.ts#method",
+        "observation": "The target owner exists and lacks the evidenced update"
+      }
+    ],
+    "rejectedHypotheses": [
+      "The local reference is missing"
+    ]
+  },
+  "localReference": {
+    "status": "VERIFIED",
+    "gameId": "__GAME_ID__",
+    "resourceRoot": "assets/resources/__GAME_ID___res",
+    "scriptsRoot": "doc/js_scripts",
+    "projectInfo": "doc/project_info.md",
+    "feature": "Archived status display",
+    "evidence": [
+      {
+        "kind": "legacy-script",
+        "source": "doc/js_scripts/SourceController.js#method",
+        "target": "assets/scripts/TargetController.ts#method",
+        "behavior": "The archived script updates the status display",
+        "adaptation": "Map the archived update to the current owner"
+      },
+      {
+        "kind": "resource",
+        "source": "assets/resources/__GAME_ID___res/feature.prefab",
+        "target": "assets/resources/__GAME_ID___res/feature.prefab",
+        "behavior": "The local Prefab supplies the serialized display binding",
+        "adaptation": "Keep the imported local resource binding"
+      }
+    ],
+    "uncovered": []
+  },
+  "analysisRouting": {
+    "module": "Status Display",
+    "model": "terra",
+    "evidence": [
+      "The change is confined to the target status display"
+    ]
+  },
+  "constraints": [
+    "Use only target-local competitor evidence",
+    "Do not modify files outside affectedFiles"
+  ],
+  "baseline": {
+    "branch": "dev",
+    "dirtyFiles": []
+  },
+  "affectedFiles": [
+    "assets/scripts/TargetController.ts"
+  ],
+  "steps": [
+    {
+      "id": "implement",
+      "action": "Update the status display",
+      "files": [
+        "assets/scripts/TargetController.ts"
+      ],
+      "verify": [
+        "npm run typecheck"
+      ]
+    }
+  ],
+  "acceptance": [
+    "The target status display matches the local reference"
+  ],
+  "stopConditions": [
+    "Local evidence is contradicted"
+  ]
+}

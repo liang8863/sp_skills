@@ -294,3 +294,35 @@
 - **Fix:** Bind the root component to `dd4d8pnxq9DNp9uD3PI5u9W`, the compressed UUID for `HbfyTotalWinPanel.ts`, then refresh the prefab before previewing.
 - **Rule:** For migrated Cocos prefabs, verify the serialized `__type__` against the generated script asset UUID and validate the runtime component class; never substitute the TypeScript `@ccclass` id.
 - **Tags:** cocos, migration, prefab, total-win, runtime-binding
+
+## Fresh runner schema is consumed before the boot migration runs
+- **情境：** 使用全新隔離 MySQL schema 啟動單遊戲 runner，並保持 `engine.debug=false` 以避免清除共享狀態。
+- **錯誤：** 程序在綁定 REST/gRPC 前 panic：`ensure per-game seeds table failed`，原因是基礎表 `game_seeds` 尚不存在。
+- **原因：** `NewSlotGameEngine()` 在建構期間先啟動 RTP/seed manager；`boot.newSlotSdkV3()` 的 `e.Migrate()` 要等 constructor 返回後才執行，因此無法替完全空白的 schema 建立 constructor 已先要求的表。
+- **修正：** 在首次啟動前執行正式 migration，或從同版本已遷移 schema 只複製基礎表結構；本次只複製 `game_seeds` 與對應的 per-game seed table，不複製資料，再重新啟動。
+- **規則：** 新 runner 的隔離資料庫不能只建立空 schema；預檢必須確認 engine constructor 所需基礎表已存在。長期修復應讓 shared boot 在 engine manager 啟動前完成 schema migration。
+- **標籤：** backend, runner, mysql, migration, startup, isolation
+
+## Windows PowerShell 5 misreads UTF-8 scripts without BOM
+- **情境：** `s_ser` 的 scheme 結構校驗腳本需要存取 `slot-rtp-scheme` 的中文 `试玩版json` 目錄。
+- **錯誤：** 腳本語法檢查通過，但由 `powershell.exe` 執行時中文路徑變成亂碼，真實 JDSRY 參考目錄被誤判為不存在，測試檔名也觸發 `Illegal characters in path`。
+- **原因：** Windows PowerShell 5 會用系統 ANSI code page 解讀沒有 BOM 的 UTF-8 `.ps1`；編輯器與靜態 parser 以 UTF-8 讀取時不會重現。
+- **修正：** 保持可執行 `.ps1` 為 ASCII，使用 Unicode code point 在 runtime 組合必要的中文路徑與檔名。
+- **規則：** 需要由 Windows PowerShell 5 執行的無 BOM 腳本不得直接包含非 ASCII 路徑字面量；必須使用 code point 組合、ASCII alias，或在產生流程中明確保證 BOM，並以 `powershell.exe` 實際執行驗證。
+- **標籤：** powershell, windows, encoding, scheme, validation
+
+## Cascade continuation breaks request-count Spin sampling
+- **情境：** 使用 `chrome_devtools` MCP 對 Cocos Canvas 的 PKWG Spin 控件做競品採樣。
+- **錯誤：** 將 `/Spin` 網路請求數直接當作玩家觸發的 Spin 次數，並把同一次操作出現的多筆請求誤判為重複輸入。
+- **原因：** 單次 `SGSpinButtonController.clickSpinButton()` 已證明可產生兩筆成功 `/Spin`；同一端點也承載 cascade continuation，不能由請求數推斷頂層玩家操作數。
+- **修正：** 以一次已記錄的控制器/UI 觸發到控件完整回 idle 為一個頂層 Spin，保存該 transaction 的完整 `/Spin` 請求鏈、結果與 idle 回復時間。多事件 DOM 手勢仍不得用於批量採樣，因為它無法建立可靠的輸入邊界。
+- **規則：** Cascade 遊戲的採樣帳本必須分開記錄 `topLevelSpinCount` 和 `spinRequestCount`；只有完整 transaction 才能計入完成 Spin，請求數只能作為傳輸證據。
+- **標籤：** chrome-devtools, competitor-analysis, cocos, cascade, input, spin-sampling
+
+## Polling can miss Cocos button busy transitions
+- **情境：** 以 `chrome_devtools` MCP 對競品 Cocos Spin 控制器進行 controller-to-idle 採樣。
+- **錯誤：** 每 100ms 輪詢 `_isInteractable`，把沒有觀察到 `false` 視為未進入 busy。
+- **原因：** `SGSpinButtonController.clickSpinButton()` 已實際產生成功 `/Spin`，但互動狀態的切換可短於輪詢週期，或由 callback 同步完成。
+- **修正：** 在單筆採樣期間包裝既有 `_setSpinButtonInteractive`，只記錄 true/false 時間戳與原方法結果；交易回 idle 且靜默後立即還原原方法。
+- **規則：** 競品 runtime 採樣不可用低頻快照否定短暫 UI state；以最小、可還原的觀測 hook 保存 state transition，並保留完整請求鏈與 idle 證據。
+- **標籤：** chrome-devtools, competitor-analysis, cocos, state-observation, spin-sampling

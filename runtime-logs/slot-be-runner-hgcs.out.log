@@ -1,0 +1,52 @@
+Using config file: ./etc/application.debug.yaml
+{"severity":"DEBUG","T":"2026-08-25T16:09:46.613+0800","C":"v4/engine.go:122","M":"[slot-engine-v3] 1 games registered"}
+{"severity":"DEBUG","T":"2026-08-25T16:09:46.617+0800","C":"v4/repository_for_redis.go:30","M":"[slot-engine] debug开启，清空 redis spin缓存"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.625+0800","C":"v4/repository_for_redis.go:153","M":"Cache cleared on startup."}
+{"severity":"DEBUG","T":"2026-08-25T16:09:46.625+0800","C":"v4/repository_for_redis.go:32","M":"[slot-engine] debug开启，清空 redis runner快照缓存"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.625+0800","C":"v4/repository_for_redis.go:159","M":"Runner state cache cleared on startup."}
+{"severity":"DEBUG","T":"2026-08-25T16:09:46.625+0800","C":"rtp/default_manager.go:98","M":"[slot-engine-rtp] debug开启，清空 rtp/种子相关 redis 缓存"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.642+0800","C":"rtp/default_manager_db.go:82","M":"[rtp] per-game seeds table game_seeds_hgcs created"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.643+0800","C":"rtp/default_manager_db.go:91","M":"[rtp] migrated 0 seed rows from game_seeds to game_seeds_hgcs"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.644+0800","C":"v4/chance_scheme.go:115","M":"[scheme] history cleared, scheme.json registered as the only scheme, hash=e7f38f0b"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.647+0800","C":"rtp/default_manager_redis.go:57","M":"Setting global RTP state in cache for game HGCS: Pool=0, TotalSpins=0"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.647+0800","C":"v4/engine.go:188","M":"RTP cache initialized for game: HGCS"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.647+0800","C":"v4/engine.go:235","M":"DefaultManager：[HGCS]"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.647+0800","C":"v4/engine.go:236","M":"NilManager：[]"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.648+0800","C":"services/service.go:110","M":"Simulation consumer started for HGCS, queue: simulation:queue:HGCS"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.649+0800","C":"rest/bet_amounts.go:58","M":"bet_amounts.json loaded","currencies":18}
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /_internal/health         --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).healthHandler-fm (4 handlers)
+[GIN-debug] POST   /v1/hgcs/spin             --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).spinHandler-fm (4 handlers)
+[GIN-debug] POST   /v1/hgcs/lastSpin         --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).spinHandler-fm (4 handlers)
+[GIN-debug] POST   /v1/hgcs/buy              --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).buyHandler-fm (4 handlers)
+[GIN-debug] GET    /v1/hgcs/bets             --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*BetAmountsHandler).getBetAmountsHandler-fm (4 handlers)
+[GIN-debug] GET    /v1/hgcs/schemes          --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).schemesHandler-fm (4 handlers)
+[GIN-debug] POST   /v1/hgcs/schemes          --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).appendSchemeHandler-fm (4 handlers)
+[GIN-debug] POST   /mock/v1/hgcs/cheat/layout --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).setCheatLayoutHandler-fm (4 handlers)
+[GIN-debug] GET    /mock/v1/hgcs/cheat/layout --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).getAllCheatLayoutsHandler-fm (4 handlers)
+[GIN-debug] DELETE /mock/v1/hgcs/rtp/data    --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).resetRtpDataHandler-fm (4 handlers)
+[GIN-debug] POST   /mock/v1/hgcs/rtp/sync    --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).syncRtpDataHandler-fm (4 handlers)
+[GIN-debug] GET    /mock/v1/hgcs/seed-library/status --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedLibraryStatusHandler-fm (4 handlers)
+[GIN-debug] GET    /mock/v1/hgcs/seed-library/status-all --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedLibraryStatusAllHandler-fm (4 handlers)
+[GIN-debug] GET    /mock/v1/hgcs/seed-library/details --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedLibraryDetailsHandler-fm (4 handlers)
+[GIN-debug] POST   /mock/v1/hgcs/seed-library/generate --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedGenStartHandler-fm (4 handlers)
+[GIN-debug] POST   /mock/v1/hgcs/seed-library/generate/stop --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedGenStopHandler-fm (4 handlers)
+[GIN-debug] GET    /mock/v1/hgcs/seed-library/generate/status --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).seedGenStatusHandler-fm (4 handlers)
+[GIN-debug] POST   /sim/v1/hgcs/simulation   --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).simulationHandler-fm (4 handlers)
+[GIN-debug] POST   /sim/v1/hgcs/simulation/stop --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).simulationStopHandler-fm (4 handlers)
+[GIN-debug] GET    /sim/v1/hgcs/simulation/progress --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).simulationProgressHandler-fm (4 handlers)
+[GIN-debug] GET    /sim/v1/hgcs/simulation/progress/download --> github.com/jp-sunshine/slot-be-games-ways/internal/rest.(*GameCenterHandler).simulationProgressDownloadHandler-fm (4 handlers)
+{"severity":"INFO","T":"2026-08-25T16:09:46.651+0800","C":"boot/boot.go:309","M":"REST server listening on","addr":"0.0.0.0:8060"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.651+0800","C":"boot/boot.go:338","M":"gRPC server listening on","addr":"0.0.0.0:8061"}
+{"severity":"INFO","T":"2026-08-25T16:09:46.654+0800","C":"v4/seed_generation.go:383","M":"[SeedGen] DefaultManager: 2 tasks need seed generation: [HGCS:spin HGCS:buy]"}
+{"severity":"INFO","T":"2026-08-25T16:09:47.751+0800","C":"v4/seed_generation.go:396","M":"[SeedGen] DefaultManager: auto seed generation complete"}
+{"severity":"INFO","T":"2026-08-25T16:09:47.751+0800","C":"v4/seed_generation.go:307","M":"[SeedGen] NilManager: no owned games, skip"}
+{"severity":"INFO","T":"2026-08-25T16:09:47.751+0800","C":"v4/seed_generation.go:307","M":"[SeedGen] *rtp.EachSpinRTPManager: no owned games, skip"}
+{"severity":"INFO","T":"2026-08-25T16:09:47.751+0800","C":"v4/engine.go:201","M":"[slot-engine-v3] rtp initialization complete, ProcessSpin now accepting requests"}
+{"severity":"ERROR","T":"2026-08-25T16:50:49.645+0800","C":"v4/repository_for_db.go:28","M":"Error 1146 (42S02): Table 'games_ways.game_result_runtime' doesn't exist"}
+{"severity":"ERROR","T":"2026-08-25T16:50:49.646+0800","C":"v4/engine.go:710","M":"emulator batch write failed: Error 1146 (42S02): Table 'games_ways.game_result_runtime' doesn't exist"}
+{"severity":"ERROR","T":"2026-08-25T16:51:22.646+0800","C":"v4/repository_for_db.go:28","M":"Error 1146 (42S02): Table 'games_ways.game_result_runtime' doesn't exist"}
+{"severity":"ERROR","T":"2026-08-25T16:51:22.646+0800","C":"v4/engine.go:710","M":"emulator batch write failed: Error 1146 (42S02): Table 'games_ways.game_result_runtime' doesn't exist"}

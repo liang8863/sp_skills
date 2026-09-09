@@ -92,11 +92,13 @@ The usual request path is
 - Type: versioned JSON data/reference repository; it has no Go or Node runtime.
 - Function: stores game RTP/scheme documents under `试玩版json/` and `正式版json/`, with
   supporting notes under `文档说明/`.
-- Use it to locate the exact `{GAME_CODE}_*_试玩版.json` structural reference required by
-  the `s-ser` trial-scheme Gate. The selected JSON can constrain shape but does not by itself
-  prove weights, RTP, deployed values, or target-game semantics.
+- Use it to locate the exact `{GAME_CODE}_*_试玩版.json` reference. It is the automatic
+  fallback scheme source when the target runner has no local `scheme.json`, and the structural
+  comparison reference when a local file exists. The selected JSON can constrain shape but
+  does not by itself prove weights, RTP, deployed values, or target-game semantics.
 - Keep it read-only except for the controlled clean-worktree fast-forward expressly required
-  by the trial-scheme Gate. Never create a missing reference or substitute another game.
+  by the scheme discovery Gate. Never create a missing reference, copy one into the runner, or
+  substitute another game. Missing local `scheme.json` does not block scheme-independent work.
 
 ### `slot-simulator-game-ways`
 
@@ -140,7 +142,8 @@ SDK extension pattern only after recording the target evidence and the adaptatio
 ## Start-of-task checks
 
 1. Resolve the exact target runner and read its local instructions, README/spec, `go.mod`,
-   `cmd/main.go`, runtime configuration, `scheme.json`, and Git status.
+   `cmd/main.go`, runtime configuration, local `scheme.json` when present, and Git status. When
+   it is absent, resolve the target game's reference from `slot-rtp-scheme` instead.
 2. Read `go.mod` `require` and `replace` entries and the nearest active `go.work`, if any.
    Record whether the runner consumes tagged modules or a local checkout. Never assume sibling
    source edits are compiled into the runner.
@@ -156,7 +159,7 @@ SDK extension pattern only after recording the target evidence and the adaptatio
    `behavior -> current producer -> current consumer -> owning repository -> permitted write -> verification`.
 5. Keep shared repositories read-only unless explicitly in scope. Do not fetch, pull, switch,
    reset, clean, stash, or upgrade dependencies merely to inspect them. Apply the separate
-   controlled sync rule when the trial-scheme Gate selects `slot-rtp-scheme`.
+   controlled sync rule when the scheme discovery Gate selects `slot-rtp-scheme`.
 6. Exclude `_codex_tmp/`, logs, build output, and unowned experimental directories from the
    toolchain. They are not authoritative source repositories.
 

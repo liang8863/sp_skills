@@ -47,7 +47,7 @@ For runtime evidence include date, viewport, action sequence, capture/log path, 
 
 ## 4. Capability matrix
 
-Include at least one row for each of these 14 exact canonical module labels, even when its state is `UNKNOWN`:
+Include at least one row for each of these 18 exact canonical module labels, even when its state is `UNKNOWN`:
 
 - Bootstrap / Loading
 - Bridge / host communication
@@ -55,7 +55,11 @@ Include at least one row for each of these 14 exact canonical module labels, eve
 - GameService lifecycle
 - API / mapper / response contract
 - Event / state lifecycle
-- Reel / stop / drop / mask / layout
+- Reel core / stop / mask / layout
+- Reel background
+- Drop peeking
+- Spin peeking
+- Reel elimination
 - Performance orchestration
 - InfoBoard / status
 - Win / payout presentation
@@ -88,7 +92,7 @@ List candidate client areas only. Exact `affectedFiles` are determined later by 
 Use semantic placeholders for unknown wire names. Do not infer a field name merely because another game or a generic engine uses it.
 
 | Fixture ID | Scenario | Seed and provenance | Request | Expected frames/layout/state/amount | Raw response path | Runner test | Simulator/client replay | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## 7. Client workstream
 
@@ -96,6 +100,11 @@ Use semantic placeholders for unknown wire names. Do not infer a field name mere
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
 For a cross-end replication, include distinct ordered tasks for client identity migration and Reel/Spin/SlotReel implementation. The identity task must cover active Scene/project identity, `slot_{replicationId}`, runtime configuration precedence, package/build configuration, and GitHub workflow ownership. The Reel task depends on both the completed server handoff and completed client identity task.
+
+Every client goal plan must also include this Reel module choreography matrix. It has exactly one row for each exact module label: `Reel core`, `Reel background`, `Drop peeking`, `Spin peeking`, and `Elimination`. Use the GPT-6 thinking route to prepare this matrix, selecting `gpt-6-astra` when a concrete model identifier is required. A module that has not been proven still needs an `UNKNOWN` row and its Gate; an `N/A` row requires local evidence. For each module, trace the source-to-target relationship between its VFX/effect, animation/timing, audio, completion callback, and cleanup. The result must preserve the evidenced choreography for that module rather than mixing unrelated resource, animation, or audio references. The resource Prefab replacement decision must prefer an existing target-local Prefab below `assets/resources/{replicationId}_res/` over a legacy Prefab. If replacement is unsafe or no suitable target-local Prefab exists, record `RETAIN_LEGACY: <evidence-based reason>` or `NO_RESOURCE_PREFAB: <evidence-based reason>`; do not silently keep a donor Prefab. After a target resource Prefab replaces an old Prefab, its serialized position, rotation, scale, anchor, size, opacity, active state, and component defaults are the baseline. Do not copy any old Prefab property into the replacement merely to preserve the prior layout. Record `KEEP_RESOURCE_SERIALIZED: <local evidence>` when that baseline remains, or `ADJUST_FOR_COMPETITOR: <property>=<value>; <target-local resource, archived JS, or runtime evidence>` when replication evidence proves an adjustment. Replacements must preserve the active Scene/Prefab serialized bindings and `.meta` UUID relationships through Cocos-aware import/binding work. Exact target files remain the responsibility of the formal `s_cli` plan.
+
+| Module | State / trigger / data boundary | Candidate target owner / binding | Resource Prefab replacement decision | New Prefab property / transform decision | VFX / effect | Animation / timing | Audio | Completion callback / cleanup | Evidence IDs | Fixture / acceptance | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## 8. Server workstream
 
@@ -133,7 +142,7 @@ Skill must be exactly `s_cli` or `s_ser`. Document root must be the safe project
 
 Every document produced during initialization and all planning contributions stays under the target client `doc/`; neither planning contributor writes its own task document. After this roadmap is generated and validated, `s_init` must run the targeted competitor-sampling and separate client/server detailed-planning stage defined by `references/detailed-plan-contract.md`. Formal implementation remains outside the `s_init` Agent's direct write scope, but `s_init` may coordinate it through the sequential goals in `references/execution-contract.md`. Each delegated skill must pass its own write-scope Gate before it starts. Do not claim either implementation handoff is executable until those Gates and both detailed-plan Gates pass. For `READY_FOR_HANDOFF`, `doc/js_scripts` must be `READY`, `clientGitBaseline` and `serverGitBaseline` must be concrete, and Client workstream, Server workstream, and Task handoff statuses must not contain `UNKNOWN`, `DRAFT`, or `BLOCKED`.
 
-For cross-end execution, Task handoff rows must preserve this Skill order: all server identity/implementation/runtime rows use `s_ser` and precede every `s_cli` row; the client identity row precedes the client Reel row. The coordination Document root remains below the target client `doc/` for both skills. `READY_FOR_HANDOFF` authorizes only targeted sampling and generation of `doc/s_init/client/detailed-replication-plan.md` plus `doc/s_init/server/detailed-replication-plan.md`; it does not authorize the first `s_ser` implementation handoff. That handoff requires both detailed plans to be current and `READY_FOR_EXECUTION`.
+For cross-end execution, Task handoff rows must preserve this Skill order: all server identity/implementation/runtime rows use `s_ser` and precede every `s_cli` row; the client identity row precedes the client Reel row. The client Reel handoff includes the five-row Reel module choreography matrix and its module acceptance records. The coordination Document root remains below the target client `doc/` for both skills. `READY_FOR_HANDOFF` authorizes only targeted sampling and generation of `doc/s_init/client/detailed-replication-plan.md` plus `doc/s_init/server/detailed-replication-plan.md`; it does not authorize the first `s_ser` implementation handoff. That handoff requires both detailed plans to be current and `READY_FOR_EXECUTION`.
 
 ## 13. Definition of done
 

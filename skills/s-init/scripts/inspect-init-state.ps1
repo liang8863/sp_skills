@@ -655,6 +655,11 @@ function Get-ProjectPlanInventory(
             headers = @('Task ID', 'Scope', 'Prerequisites', 'Candidate target areas', 'Evidence IDs', 'Verification', 'Acceptance', 'Status')
         },
         [pscustomobject]@{
+            section = '7. Client workstream'
+            name = 'Reel module choreography'
+            headers = @('Module', 'State / trigger / data boundary', 'Candidate target owner / binding', 'Resource Prefab replacement decision', 'New Prefab property / transform decision', 'VFX / effect', 'Animation / timing', 'Audio', 'Completion callback / cleanup', 'Evidence IDs', 'Fixture / acceptance', 'Status')
+        },
+        [pscustomobject]@{
             section = '8. Server workstream'
             name = 'Server workstream'
             headers = @('Task ID', 'Scope (contract/rules/seeds/math/runtime)', 'Prerequisites', 'Candidate server area', 'Fixture output', 'Tests/simulator', 'Acceptance', 'Status')
@@ -801,7 +806,11 @@ function Get-ProjectPlanInventory(
         'GameService lifecycle',
         'API / mapper / response contract',
         'Event / state lifecycle',
-        'Reel / stop / drop / mask / layout',
+        'Reel core / stop / mask / layout',
+        'Reel background',
+        'Drop peeking',
+        'Spin peeking',
+        'Reel elimination',
         'Performance orchestration',
         'InfoBoard / status',
         'Win / payout presentation',
@@ -825,7 +834,7 @@ function Get-ProjectPlanInventory(
             if ($requiredCapabilitySet.Contains($module)) {
                 [void]$seenCapabilitySet.Add($module)
             } elseif ($module -notmatch '(?i)^game-specific(?:\s+mechanics?)?\s*[:/-]\s*\S.*$') {
-                $issues.Add("Capability matrix uses a module outside the 14 canonical modules: $module")
+                $issues.Add("Capability matrix uses a module outside the 18 canonical modules: $module")
             }
             if ($cells.Count -gt 6 -and
                 @('s_cli', 's_ser', 'both', 'blocked') -cnotcontains $cells[6].Trim()) {
@@ -839,11 +848,64 @@ function Get-ProjectPlanInventory(
         }
     }
 
+    $requiredReelModules = @(
+        'Reel core',
+        'Reel background',
+        'Drop peeking',
+        'Spin peeking',
+        'Elimination'
+    )
+    $requiredReelModuleSet = [System.Collections.Generic.HashSet[string]]::new(
+        [string[]]$requiredReelModules,
+        [StringComparer]::Ordinal
+    )
+    $seenReelModuleSet = [System.Collections.Generic.HashSet[string]]::new(
+        [StringComparer]::Ordinal
+    )
+    if ($resolvedTables.ContainsKey('Reel module choreography')) {
+        foreach ($row in @($resolvedTables['Reel module choreography'].rows)) {
+            $cells = [string[]]$row.cells
+            if ($cells.Count -eq 0) { continue }
+            $module = $cells[0].Trim()
+            if ($requiredReelModuleSet.Contains($module)) {
+                [void]$seenReelModuleSet.Add($module)
+            } else {
+                $issues.Add("Reel module choreography uses an unsupported module: $module")
+            }
+            if ($cells.Count -gt 11 -and
+                $cells[11].Trim().Equals('READY', [StringComparison]::OrdinalIgnoreCase)) {
+                $prefabDecision = $cells[3].Trim()
+                $resourcePrefabPrefix = "assets/resources/$($ReplicationId)_res/"
+                if (Test-IsExplicitUnknown $prefabDecision) {
+                    $issues.Add("READY Reel module choreography row '$module' requires a Resource Prefab replacement decision")
+                } elseif (-not $prefabDecision.StartsWith($resourcePrefabPrefix, [StringComparison]::OrdinalIgnoreCase) -and
+                    $prefabDecision -notmatch '(?i)^(RETAIN_LEGACY|NO_RESOURCE_PREFAB)\s*:\s*\S') {
+                    $issues.Add("READY Reel module choreography row '$module' must use a target resource Prefab or state RETAIN_LEGACY/NO_RESOURCE_PREFAB with a reason")
+                }
+
+                $propertyDecision = $cells[4].Trim()
+                if (Test-IsExplicitUnknown $propertyDecision) {
+                    $issues.Add("READY Reel module choreography row '$module' requires a New Prefab property / transform decision")
+                } elseif ($propertyDecision -notmatch '(?i)^(KEEP_RESOURCE_SERIALIZED|ADJUST_FOR_COMPETITOR)\s*:\s*\S') {
+                    $issues.Add("READY Reel module choreography row '$module' must keep resource serialized properties or record a competitor-evidence adjustment")
+                } elseif ($propertyDecision -match '(?i)(OLD[_\s-]*PREFAB|LEGACY[_\s-]*PREFAB|COPY[_\s-]*(OLD|LEGACY))') {
+                    $issues.Add("READY Reel module choreography row '$module' cannot copy a legacy Prefab property into a new resource Prefab")
+                }
+            }
+        }
+    }
+    foreach ($module in $requiredReelModules) {
+        if (-not $seenReelModuleSet.Contains($module)) {
+            $issues.Add("Reel module choreography must include the module: $module")
+        }
+    }
+
     $evidenceReferenceContracts = @(
         [pscustomobject]@{ name = 'Capability matrix'; rowIdIndex = 0; evidenceIndex = 3; behaviorIndex = 2 },
         [pscustomobject]@{ name = 'Source-to-target mapping'; rowIdIndex = 0; evidenceIndex = 3; behaviorIndex = 2 },
         [pscustomobject]@{ name = 'Protocol'; rowIdIndex = 0; evidenceIndex = 4; behaviorIndex = 1 },
-        [pscustomobject]@{ name = 'Client workstream'; rowIdIndex = 0; evidenceIndex = 4; behaviorIndex = -1 }
+        [pscustomobject]@{ name = 'Client workstream'; rowIdIndex = 0; evidenceIndex = 4; behaviorIndex = -1 },
+        [pscustomobject]@{ name = 'Reel module choreography'; rowIdIndex = 0; evidenceIndex = 9; behaviorIndex = 1 }
     )
     foreach ($referenceContract in $evidenceReferenceContracts) {
         if (-not $resolvedTables.ContainsKey($referenceContract.name)) { continue }
@@ -938,6 +1000,7 @@ function Get-ProjectPlanInventory(
 
         foreach ($statusContract in @(
             [pscustomobject]@{ name = 'Client workstream'; statusIndex = 7 },
+            [pscustomobject]@{ name = 'Reel module choreography'; statusIndex = 11 },
             [pscustomobject]@{ name = 'Server workstream'; statusIndex = 7 },
             [pscustomobject]@{ name = 'Task handoff'; statusIndex = 9 }
         )) {

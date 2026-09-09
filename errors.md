@@ -326,3 +326,27 @@
 - **修正：** 在單筆採樣期間包裝既有 `_setSpinButtonInteractive`，只記錄 true/false 時間戳與原方法結果；交易回 idle 且靜默後立即還原原方法。
 - **規則：** 競品 runtime 採樣不可用低頻快照否定短暫 UI state；以最小、可還原的觀測 hook 保存 state transition，並保留完整請求鏈與 idle 證據。
 - **標籤：** chrome-devtools, competitor-analysis, cocos, state-observation, spin-sampling
+
+## Non-cascade presentation needs both SPIN_RESULT and SPIN_COMPLETE acknowledgements
+- **情境：** FLP 使用 ExternalModules 的 `BaseGameServiceLogic` 執行沒有 cascade 的 3x3 Spin。
+- **錯誤：** API 成功且九個 symbol 已渲染，但流程停在 elimination wait，Spin 無法回到 standby。
+- **原因：** presentation 在 `SPIN_RESULT` 完成後只發出一次 `ANIMATION_COMPLETE`；該事件只解除第一個等待。平台接著發出 `SPIN_COMPLETE` 並等待第二次 completion 才結束 Spin。
+- **修正：** presentation owner 註冊 `SPIN_COMPLETE`，只對同一個 terminal non-cascade generation 發出第二個 `ANIMATION_COMPLETE`；完成後清除 awaiting generation 並去重。
+- **規則：** 接入 `BaseGameServiceLogic` 的非 cascade 遊戲必須以 runtime event sequence 驗證兩階段 completion，不可因 `isCascade=false` 就假設一次 completion 足夠，也不可從 GameService 偽造事件。
+- **標籤：** cocos, lifecycle, spin-complete, animation-complete, non-cascade, flp
+
+## Cocos 2 compact Euler ObjectTrack crashes Cocos 3.8 animation evaluation
+- **情境：** FLP 勝局播放由 Cocos 2.x 搬入的 `wh_vfx_e_random.anim`。
+- **錯誤：** 動畫引擎反覆拋出 `Cannot read properties of undefined (reading 'x')`，stack 為 `Vec3.copy -> Node.setRotationFromEuler -> ObjectTrack.evaluate`；no-win 正常，win presentation 卡住。
+- **原因：** 四條 `eulerAngles` `ObjectTrack` 的 `ObjectCurve` key value 仍是 Cocos 2.x 緊湊陣列 `[1,0,0,z]`，Cocos 3.8 將其當成 `Vec3` 物件讀取。
+- **修正：** 將每條 track 就地轉為 `cc.animation.UntypedTrack`，以單一 `property: "z"` 的 `UntypedTrackChannel + RealCurve` 保存原 path、time 與 Z 值；保持 root track ID、duration、wrapMode 及 `.meta` UUID不變，然後由 AssetDB refresh。
+- **規則：** 遷移 `.anim` 時必須掃描 `eulerAngles` ObjectTrack；不得只驗證 JSON 可解析。至少以一個會實際播放該 clip 的 win path 驗證，並檢查沒有 `Vec3.copy/setRotationFromEuler` error。
+- **標籤：** cocos, migration, animation, object-track, euler-angles, vec3, flp
+
+## Nested InfoBar instances do not share the current win value
+- **情境：** FLP 在主資訊列已有非零贏分時開啟自動旋轉面板。
+- **錯誤：** 面板內的 `CustomInfoBarView` 贏分顯示被重設為 `0`，與主資訊列不同步。
+- **原因：** 主資訊列與自動旋轉面板各自實例化一份 `CustomInfoBarView`；框架開啟面板時以 `AbstractAutoSpinPanelLogic.currentWin` 的初始值更新內嵌資訊列。兩者使用相同 Prefab 和 `IconSprite` 並不代表共享數值狀態，實際數值由同層 `Label` 持有。
+- **修正：** 在 `openAutoSpin` 原始狀態處理完成後，透過 View 的既有存取器把主資訊列已格式化的 win Label 字串同步到面板內的 win Label。
+- **規則：** 重複實例化資訊列的面板必須在開啟邊界同步當前顯示值；不得以共用 Prefab 或圖示節點推斷兩個執行個體共享狀態。
+- **標籤：** cocos, flp, auto-spin, info-bar, state-sync, initialization-order

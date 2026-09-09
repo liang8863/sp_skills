@@ -127,7 +127,11 @@ This roadmap scopes evidence-gated client and server replication. It is neither 
 | GameService lifecycle | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
 | API / mapper / response contract | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
 | Event / state lifecycle | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
-| Reel / stop / drop / mask / layout | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
+| Reel core / stop / mask / layout | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
+| Reel background | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
+| Drop peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
+| Spin peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
+| Reel elimination | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
 | Performance orchestration | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
 | InfoBoard / status | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
 | Win / payout presentation | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |
@@ -157,6 +161,14 @@ This roadmap scopes evidence-gated client and server replication. It is neither 
 | Task ID | Scope | Prerequisites | Candidate target areas | Evidence IDs | Verification | Acceptance | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | C-1 | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | UNKNOWN | DRAFT |
+
+| Module | State / trigger / data boundary | Candidate target owner / binding | Resource Prefab replacement decision | New Prefab property / transform decision | VFX / effect | Animation / timing | Audio | Completion callback / cleanup | Evidence IDs | Fixture / acceptance | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Reel core | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |
+| Reel background | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |
+| Drop peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |
+| Spin peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |
+| Elimination | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |
 
 ## 8. Server workstream
 
@@ -345,6 +357,31 @@ try {
     [IO.File]::WriteAllText($projectPlanPath, $missingCanonicalModulePlan)
     $missingCanonicalModule = Invoke-Script $inspector @('-ProjectPath', $clientPath)
     Assert-Inventory $missingCanonicalModule 'NEEDS_PROJECT_PLAN_REVIEW' 'missing canonical capability module'
+
+    $missingReelModulePlan = [regex]::Replace(
+        $validPlan,
+        '(?m)^\| Elimination \| UNKNOWN \| UNKNOWN \| UNKNOWN \| UNKNOWN \| UNKNOWN \| UNKNOWN \| UNKNOWN \| UNKNOWN \| E-1 \| UNKNOWN \| DRAFT \|(?:\r?\n)?',
+        ''
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $missingReelModulePlan)
+    $missingReelModule = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $missingReelModule 'NEEDS_PROJECT_PLAN_REVIEW' 'missing Reel choreography module'
+
+    $missingPrefabDecisionPlan = $validPlan.Replace(
+        '| Reel core | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Reel core | UNKNOWN | UNKNOWN |  | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |'
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $missingPrefabDecisionPlan)
+    $missingPrefabDecision = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $missingPrefabDecision 'NEEDS_PROJECT_PLAN_REVIEW' 'missing Reel Prefab replacement decision'
+
+    $missingPrefabPropertyDecisionPlan = $validPlan.Replace(
+        '| Reel core | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Reel core | UNKNOWN | UNKNOWN | UNKNOWN |  | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |'
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $missingPrefabPropertyDecisionPlan)
+    $missingPrefabPropertyDecision = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $missingPrefabPropertyDecision 'NEEDS_PROJECT_PLAN_REVIEW' 'missing Reel new Prefab property decision'
 
     $wrongCaseModulePlan = $validPlan.Replace(
         '| Bootstrap / Loading | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | blocked |',
@@ -548,6 +585,21 @@ try {
         '| C-1 | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | UNKNOWN | DRAFT |',
         '| C-1 | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | UNKNOWN | READY |'
     ).Replace(
+        '| Reel core | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Reel core | UNKNOWN | UNKNOWN | NO_RESOURCE_PREFAB: test fixture | KEEP_RESOURCE_SERIALIZED: E-1 | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | READY |'
+    ).Replace(
+        '| Reel background | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Reel background | UNKNOWN | UNKNOWN | NO_RESOURCE_PREFAB: test fixture | KEEP_RESOURCE_SERIALIZED: E-1 | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | READY |'
+    ).Replace(
+        '| Drop peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Drop peeking | UNKNOWN | UNKNOWN | NO_RESOURCE_PREFAB: test fixture | KEEP_RESOURCE_SERIALIZED: E-1 | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | READY |'
+    ).Replace(
+        '| Spin peeking | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Spin peeking | UNKNOWN | UNKNOWN | NO_RESOURCE_PREFAB: test fixture | KEEP_RESOURCE_SERIALIZED: E-1 | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | READY |'
+    ).Replace(
+        '| Elimination | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | DRAFT |',
+        '| Elimination | UNKNOWN | UNKNOWN | NO_RESOURCE_PREFAB: test fixture | KEEP_RESOURCE_SERIALIZED: E-1 | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | E-1 | UNKNOWN | READY |'
+    ).Replace(
         '| S-1 | UNKNOWN | UNKNOWN | UNKNOWN | F-1 | UNKNOWN | UNKNOWN | DRAFT |',
         '| S-1 | UNKNOWN | UNKNOWN | UNKNOWN | F-1 | UNKNOWN | UNKNOWN | READY |'
     ).Replace(
@@ -571,6 +623,30 @@ try {
     [IO.File]::WriteAllText($projectPlanPath, $readyPlan)
     $fullyReady = Invoke-Script $inspector @('-ProjectPath', $clientPath)
     Assert-Inventory $fullyReady 'READY' 'fully resolved ready-for-handoff plan'
+
+    $readyWithUnknownPrefabDecisionPlan = $readyPlan.Replace(
+        'NO_RESOURCE_PREFAB: test fixture',
+        'UNKNOWN'
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $readyWithUnknownPrefabDecisionPlan)
+    $readyWithUnknownPrefabDecision = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $readyWithUnknownPrefabDecision 'NEEDS_PROJECT_PLAN_REVIEW' 'ready plan with UNKNOWN Reel Prefab replacement decision'
+
+    $readyWithUnknownPrefabPropertyDecisionPlan = $readyPlan.Replace(
+        'KEEP_RESOURCE_SERIALIZED: E-1',
+        'UNKNOWN'
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $readyWithUnknownPrefabPropertyDecisionPlan)
+    $readyWithUnknownPrefabPropertyDecision = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $readyWithUnknownPrefabPropertyDecision 'NEEDS_PROJECT_PLAN_REVIEW' 'ready plan with UNKNOWN Reel new Prefab property decision'
+
+    $readyWithLegacyPropertyCopyPlan = $readyPlan.Replace(
+        'KEEP_RESOURCE_SERIALIZED: E-1',
+        'ADJUST_FOR_COMPETITOR: position=old Prefab position; E-1'
+    )
+    [IO.File]::WriteAllText($projectPlanPath, $readyWithLegacyPropertyCopyPlan)
+    $readyWithLegacyPropertyCopy = Invoke-Script $inspector @('-ProjectPath', $clientPath)
+    Assert-Inventory $readyWithLegacyPropertyCopy 'NEEDS_PROJECT_PLAN_REVIEW' 'ready plan that copies a legacy Reel Prefab property'
 
     [IO.File]::WriteAllText((Join-Path $scriptsPath 'archive.js'), " `r`n`t ")
     [IO.File]::WriteAllText($projectPlanPath, $readyPlan)

@@ -61,7 +61,7 @@ Bootstrap / Loading
 | GameService / 交易 | `terra` | bet 快照、Spin、Auto Spin、Feature Buy、Last Spin、恢复、余额/交易完成 | 请求入口、金额快照、响应消费和 round complete 分别由谁拥有？ | 请求、响应、事件、表现、余额和最终完成状态一致 |
 | API / Mapper / Types | `terra` | raw 请求响应、字段转换、订单/金额/布局字段 | raw 字段如何映射？哪些缩写和父子层级需要保留？ | 不丢字段、不误读缩写；父子订单和每帧/整局金额可区分 |
 | Event / State | `terra` | 事件、payload、游戏状态转换、事件去重 | 发布者、消费者、payload、幂等边界和异常恢复点分别在哪里？ | 发布者/消费者配对；重复结果不会重复结算；异常能回到可用状态 |
-| Reel / SlotReel | `terra` | 结果布局、停轮、符号显示、Wild/Scatter、长符号、坐标、消除/下落 | 本地布局格式、索引转换、停轮/掉落分支和清理责任如何证明？ | 每个位置映射正确，停轮/下落/遮罩/特效无错位 |
+| Reel / SlotReel | `gpt-6` | Reel core、转盘背景、Spin 咪牌、掉落咪牌、消除、结果布局、停轮、符号显示、Wild/Scatter、长符号与坐标 | 五个模块的状态边界、索引转换、`{gameId}_res` Prefab 替换和新 Prefab 属性/变换决策、资源/绑定、VFX、动画、音效、callback 与清理责任如何分别由本地证据证明？ | 每个位置映射正确；新资源 Prefab 的序列化值是默认值，旧 Prefab 属性不回写；每个模块的 VFX/动画/音效/callback 与证据一致，无错位或残留 |
 | Performance | `terra` | 把结果事件编排成视觉生命周期 | 当前项目事件如何排成表现链？每个阶段由哪个 callback 完成？ | 普通 Spin、Cascade、Free Game、BigWin、TotalWin 的顺序和回调完整 |
 | InfoBoard | `terra` | 跑马灯、Win、Total Win、Scatter/FG 提示、底板、倍率和清理 | 本地有哪些显示模式？金额、文字、资源、互斥和清理各由谁拥有？ | 文案/金额/模式/动画/回调/清理正确 |
 | Win / Payout | `terra` | 中奖高亮、金额滚动、符号派彩、Wild/Scatter 特效 | 中奖位置与金额来自哪个响应层级？表现完成点在哪里？ | 中奖位置、金额、特效顺序和结束回调一致 |
@@ -70,7 +70,9 @@ Bootstrap / Loading
 | 特有玩法 | `terra` | Cascade、倍率、Respin、Slow Drop、Ways、Feature Buy 等 | 本地协议、资源与旧脚本分别支持哪些玩法事实？未覆盖项是什么？ | 只按当前项目协议验收，不套用另一个项目的玩法参数 |
 | Resource / Prefab | `terra` | Scene 节点、Component、UUID/meta、Prefab、Sprite/Spine/Animation/Audio | 本地资源对象、序列化绑定、初始状态和加载路径是什么？ | 绑定存在、类型正确、资源可加载、启用/禁用时机正确 |
 
-模型列表示默认路由。转盘相关混合需求，只要涉及 Reel/SlotReel/布局能力，或涉及 Free Game/Bonus 的触发、入退场、专用 UI/资源、Retrigger、Restore、单轮 Big Win、最终结算及其关联链路，整次需求统一使用 `terra`；其他需求也默认使用 `terra`。
+模型列表示默认路由。只要涉及 Reel core、转盘背景、Spin 咪牌、掉落咪牌、消除、Reel/SlotReel 或其直接的 Free Game/Bonus 触发与转场接口，分析与计划统一使用 `gpt-6`；可选择模型标识时使用 `gpt-6-astra`。先输出五行模块编排表，再拆实现计划。其他需求默认使用 `terra`。
+
+转盘实现先检查目标项目 `assets/resources/{gameId}_res/` 下的现有 Prefab。每个模块必须写出“资源 Prefab -> 待替换旧 Prefab/owner -> 序列化绑定影响 -> 新 Prefab 属性/变换决定 -> 验收”：有匹配资源时优先经 Cocos-aware import/binding 使用它；新 Prefab 的序列化 position、rotation、scale、anchor、size、opacity、active 和 component default 是起点，不能为了沿用旧布局而复制旧 Prefab 属性。未调整时记录 `KEEP_RESOURCE_SERIALIZED: <本地证据>`；只有目标资源、归档 JS 或竞品 runtime 证据证明时，才记录 `ADJUST_FOR_COMPETITOR: <属性>=<值>; <证据>` 并调整。没有匹配资源或替换会破坏已证实的 binding 时，保留旧 Prefab 并写出本地证据理由。不得从同级游戏、`*_UI` 或外部资源工程补用 Prefab，也不得手改 UUID、`fileId`、`__id__`、脚本类型或动画/音频引用来伪造替换。
 
 ## 三、按需功能切片
 
@@ -81,7 +83,7 @@ Bootstrap / Loading
 | 启动、Loading、Host、Bridge、ExternalModules | `bootstrap-and-bridge.md` | `terra` |
 | GameService、API、Mapper、交易、金额、Last Spin、Auto Spin | `game-service-api.md` | `terra` |
 | 事件、状态、Performance、时序、callback、结算编排 | `event-state-performance.md` | `terra` |
-| Reel、SlotReel、布局、停轮、Scatter、peeking、掉落、Cascade | `reel-and-layout.md` | `terra` |
+| Reel、SlotReel、转盘背景、布局、停轮、Scatter、Spin 咪牌、掉落咪牌、消除、Cascade | `reel-and-layout.md` | `gpt-6` |
 | InfoBoard、跑马灯、Win、提示、语言刷新 | `infoboard-win.md` | `terra` |
 | BigWin、TotalWin、阈值、跳过、收集、退场 | `bigwin-totalwin.md` | `terra` |
 | Free Game、Bonus、Retrigger、Restore、FG 入退场/次数 | `free-game-bonus.md` | `terra` |
@@ -123,6 +125,8 @@ Last Spin/异常路径：
 本地旧逻辑入口（固定在 doc/js_scripts）：
 本地 Prefab/Scene/动画/音频：
 行为对照（source -> target -> adaptation）：
+资源 Prefab 替换决定（{gameId}_res -> 旧 Prefab/owner -> binding 影响 -> 验收）：
+新 Prefab 属性/变换决定（KEEP_RESOURCE_SERIALIZED 或 ADJUST_FOR_COMPETITOR: 属性=值; 本地资源/归档 JS/runtime 证据）：
 本地竞品参考未覆盖项：
 允许的兼容差异：
 ```
@@ -153,7 +157,7 @@ Last Spin/异常路径：
 ## 六、本地证据边界
 
 - `doc/project_info.md`：只读取 `gameId`、绝对 HTTP(S) `competitorUrl` 和已记录约束；不得把 URL 当成额外浏览或外部工程入口。
-- `assets/resources/{gameId}_res/`：检查 Prefab/Scene 层级、UUID/meta、序列化绑定、动画、材质、Spine、音频和初始状态。
+- `assets/resources/{gameId}_res/`：检查 Prefab/Scene 层级、UUID/meta、序列化绑定、动画、材质、Spine、音频和初始状态；当其存在适配的模块 Prefab 时，它是替换旧 Prefab 的第一候选来源。
 - `doc/js_scripts/`：检查旧控制器入口、事件、状态、fallback、callback、异步加载、清理和资源路径用法。
 - 目标项目当前代码和运行时：只用于定位适配边界和验证实现，不得反向覆盖本地竞品参考。
 
@@ -163,7 +167,7 @@ Last Spin/异常路径：
 
 Slot 客户端需求应按交易、事件状态、表现编排、Reel 映射、InfoBoard/Win、Free Game、控制面板和资源绑定之间的完整链路拆解；这个分类仅用于检查影响面，不定义目标游戏的行为。
 
-因此 `s_cli` 的需求分析 Agent 必须先产出模块能力矩阵，再产出代码计划；分析模型按模块路由，转盘能力及任何 Free Game/Bonus 相关处理统一使用 `terra`，其他能力也默认使用 `terra`。`luna` 只能按能力项和验收项执行，不能按模糊的控制器名称猜测修改范围。
+因此 `s_cli` 的需求分析 Agent 必须先产出模块能力矩阵，再产出代码计划。转盘需求先由 `gpt-6` 思考，并为 Reel core、Reel background、Drop peeking、Spin peeking、Elimination 各产出一行，列明状态/数据边界、owner/binding、`{gameId}_res` Prefab 替换决定、VFX/effect、animation/timing、audio、callback/cleanup、证据、fixture 与验收。`luna` 只能在有效 v2 计划下按能力项和验收项执行，不能按模糊的控制器名称猜测修改范围。
 
 无论使用默认的 `terra` 还是上层明确指定的 `sol`，都必须先通过本地竞品参考 Gate；`luna` 只能执行目标项目内 `{gameId}_res`、`doc/js_scripts` 与 `doc/project_info.md` 已有证据支持的适配，不能查阅外部资源工程，也不能自行新增、优化或重排玩法与表现。
 

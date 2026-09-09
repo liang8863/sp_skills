@@ -16,7 +16,7 @@ skills:
 
 凡需開啟、檢查或操作網頁時，一律使用 `chrome_devtools` MCP。不得呼叫 `browser` 或 `browser:control-in-app-browser` skill，也不得以其他瀏覽器控制包裝替代。這不改變 Cocos Editor/Scene/Console 使用既有 Cocos MCP、伺服器契約使用 direct HTTP 的規則；兩個 `s_init` 規劃模式仍不得自行瀏覽競品 URL。`chrome_devtools` 不可用時，保留非瀏覽器證據並以 `NEEDS_CHROME_DEVTOOLS` 記錄受阻項目。
 
-每次允許的 Chrome MCP 任務開始時，先以 `list_pages` 保存既存 page ID，再建立專屬任務頁籤，優先使用任務專屬 isolated context；不得接管或關閉無關基線頁籤。載入任何可能播放音訊的網址前，必須透過受支援的實例級啟動／設定或 MCP 機制讓專用 Chrome 實例靜音並驗證；只設定 HTML media element muted 不足以涵蓋 WebAudio。無法套用或驗證時回報 `NEEDS_CHROME_MUTE`，不得導航或操作目標頁面。
+每次允許的 Chrome MCP 任務開始時，先以 `list_pages` 保存既存 page ID，再建立專屬任務頁籤，優先使用任務專屬 isolated context；不得接管或關閉無關基線頁籤。瀏覽器靜音為可選條件：方便時可透過受支援的實例級啟動／設定或 MCP 機制靜音並驗證；只設定 HTML media element muted 不足以涵蓋 WebAudio。靜音不可用、套用失敗或無法驗證時，直接繼續導航、操作及驗收，不要求確認。不得將靜音作為前置條件、退出條件或驗收阻塞項，本流程不得因此回報 `NEEDS_CHROME_MUTE`。
 
 追蹤任務建立的所有 page／popup。在成功、失敗、timeout 或 blocked 退出的 `finally` 流程中，先停止 trace、保存必要證據，再按建立順序反向使用 `close_page` 關閉所有任務頁籤；若本任務啟動了可確認歸屬的專用 Chrome 實例，最後使用專屬 shutdown 關閉。清理後重新 `list_pages` 驗證，不得關閉基線頁籤或按程序名稱批量終止 Chrome。最後一個任務頁籤／實例無法關閉時，回報 `CHROME_CLEANUP_FAILED` 與殘留 identity，不得宣稱瀏覽器驗收或清理成功。
 
@@ -26,7 +26,7 @@ skills:
 
 ## s_init 客戶端詳細規劃模式
 
-只有 `s_init` 在總計畫已產生並驗證後明確派發 `s_init detailed planning contribution`，才啟用此唯讀模式。讀取總計畫及其 SHA-256、`doc/s_init/evidence/client/` 的定向採樣、目標客戶端、local resource、歸檔 JS 與 server workstream，並遵守 `s-init/references/detailed-plan-contract.md`。逐項把 client roadmap task／acceptance ID 對應到已觀察 UI、狀態、時序、清理／恢復、Scene／Prefab／serialized binding、資源、TS owner、API/mapper consumer、server fixture dependency、實作切片、驗證與 Gate，將 `doc/s_init/client/detailed-replication-plan.md` 的完整內容回傳給 `s_init`。不得自行瀏覽競品、寫檔、建立 `doc/s_cli/**`、產生 v2 `plan.json` 或修改代碼／資源。此模式採用 `s_init` 三個必要 FG 場景截圖覆蓋，不採用固定 Spin／事件次數；可選場景為掉落咪牌、Spin 咪牌、Big Win、Mega Win 與 Super Mega Win，缺少時不構成 Gate。普通 Spin 不屬於 `s_init` 採樣 checklist。缺少三個必要場景之一時，回傳 `CAPTURED`／`MISSING` 矩陣、`DRAFT_EVIDENCE_GATED` 與 `NEEDS_TARGETED_COMPETITOR_SAMPLE`。
+只有 `s_init` 在總計畫已產生並驗證後明確派發 `s_init detailed planning contribution`，才啟用此唯讀模式。讀取總計畫及其 SHA-256、`doc/s_init/evidence/client/` 的定向採樣、目標客戶端、local resource、歸檔 JS 與 server workstream，並遵守 `s-init/references/detailed-plan-contract.md`。逐項把 client roadmap task／acceptance ID 對應到已觀察 UI、狀態、時序、清理／恢復、Scene／Prefab／serialized binding、資源、TS owner、API/mapper consumer、server fixture dependency、實作切片、驗證與 Gate，將 `doc/s_init/client/detailed-replication-plan.md` 的完整內容回傳給 `s_init`。轉盤內容使用 GPT-6 thinking route，並為 Reel core、Reel background、Drop peeking、Spin peeking、Elimination 分別記錄 VFX/effect、animation/timing、audio、callback/cleanup 與 `{replicationId}_res` Prefab 替換決策；有匹配目標資源時優先替換舊 Prefab，否則記錄可追溯的保留理由。不得自行瀏覽競品、寫檔、建立 `doc/s_cli/**`、產生 v2 `plan.json` 或修改代碼／資源。此模式採用 `s_init` 三個必要 FG 場景截圖覆蓋，不採用固定 Spin／事件次數；可選場景為掉落咪牌、Spin 咪牌、Big Win、Mega Win 與 Super Mega Win，缺少時不構成 Gate。普通 Spin 不屬於 `s_init` 採樣 checklist。缺少三個必要場景之一時，回傳 `CAPTURED`／`MISSING` 矩陣、`DRAFT_EVIDENCE_GATED` 與 `NEEDS_TARGETED_COMPETITOR_SAMPLE`。
 
 ## s_init 執行模式
 
@@ -35,7 +35,7 @@ skills:
 在同一客戶端 Goal 內依序執行兩個正式任務，每個任務仍需自己的 `doc/s_cli/<task-id>/`、ROOT_CAUSE、version 2 plan、validator、ACCEPT 與 result：
 
 1. 目標身份遷移：由專案 slug 唯一取得 `replicationId`，逐項確認 owner/consumer 後才修改 active Scene 名稱／引用、Cocos project/settings 的 `slot_{replicationId}`、`GameConfig`、runtime `gameConfig.json`、已驗收 API game code、package/build 設定與 `.github/workflows/**`。保留 Scene/Prefab `.meta` UUID、`startScene` UUID、`fileId`／`__id__`／script type、provider ID、signed URL、Bridge 與 SDK 名稱。先確認 active build profile 及 `GameConfig -> gameConfig.json -> Host` 覆蓋順序；不能因 donor-like 名稱就改 class、node 或歷史 profile。
-2. Reel 實作：先把伺服器 handoff 的 fixture 重新保存或擷取到目標 `doc/s_cli/**`，用 client-owned raw artifact 通過 `serverDataCheck`；再把 `project_plan.md` 與客戶端詳細復刻計畫當規劃輸入，建立自己的 v2 plan，執行 Reel／Spin／SlotReel 完整流程。
+2. Reel 實作：先把伺服器 handoff 的 fixture 重新保存或擷取到目標 `doc/s_cli/**`，用 client-owned raw artifact 通過 `serverDataCheck`；再把 `project_plan.md` 與客戶端詳細復刻計畫當規劃輸入，以 GPT-6 thinking route 建立自己的 v2 plan，分別執行 Reel core、Reel background、Drop peeking、Spin peeking、Elimination。每一項先檢查 `{replicationId}_res` Prefab 並優先替換舊 Prefab，記錄 serialized binding/.meta UUID 影響、新 Prefab 屬性／變換決策、VFX/effect、animation/timing、audio、callback/cleanup 與驗收；替換後以目標資源 Prefab 的序列化 position、rotation、scale、anchor、size、opacity、active 和 component default 為起點。舊 Prefab 只用於確認 owner、consumer 與 binding 風險，不能把其屬性回寫到新 Prefab；只有目標資源、歸檔 JS 或 runtime 競品證據證明時才能調整。沒有適配資源或替換不安全時，保留舊件並附本地證據理由。
 
 身份 residue、JSON/config parse、Scene/meta/reference、相關 build/static 與 Cocos active project/launch Scene smoke 未通過前，不得開始 Reel。身份對應衝突、active profile 不明、runtime game code 未取證或序列化識別無法安全解析時，分別回報 `IDENTITY_MAPPING_CONFLICT`、`NEEDS_ACTIVE_BUILD_PROFILE`、`NEEDS_PROTOCOL_EVIDENCE`、`SERIALIZED_IDENTITY_UNRESOLVED`，不得猜測。Client Goal 只有在 Reel 驗收及必要 cross-end fixture replay 通過後才能完成；build、visual、deployment、cross-end 必須分層報告。
 
@@ -74,7 +74,8 @@ skills:
 
 ## 模型路由
 
-- `gpt-5.6-terra`：Reel、SlotReel、Spin 時序、停輪、peeking、drop、mask、layout，以及所有 Free Game/Bonus 相關流程和其他模組；这是 `$s-cli` 的统一默认实现模型。
+- `gpt-6-astra`：Reel core、Reel background、Drop peeking、Spin peeking、Elimination，以及它们直接关联的 Reel/SlotReel、Spin 时序、停轮、mask、layout 和 Free Game/Bonus 触发/转场接口；这是 `$s-cli` 的 GPT-6 thinking route。
+- `gpt-5.6-terra`：其他模块默认使用；与转盘模块直接关联的 Free Game/Bonus 链路仍由 GPT-6 thinking route 覆盖。
 - `gpt-5.6-sol`：不作为 `$s-cli` 的默认路由，仅在上层或用户明确指定时使用。
 - 只有 validator 輸出 `VALID`、且非 `--plan-only` / `--dry-run` 的 version 2 計畫可交給 `gpt-5.6-luna` 執行；`HISTORICAL_VALID_ONLY` 不得派發。無法使用指定模型時回報 `MODEL_UNAVAILABLE`。
 

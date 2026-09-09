@@ -643,9 +643,9 @@ if ($plan.version -eq 2 -and (Has-Property $plan 'serverDataCheck')) {
     }
 }
 
-$allowedModels = @('terra', 'gpt-5.6-terra')
+$allowedModels = @('terra', 'gpt-5.6-terra', 'gpt-6', 'gpt-6-astra')
 if ($allowedModels -notcontains $plan.analysisRouting.model) {
-    Add-PlanError 'analysisRouting.model must be terra'
+    Add-PlanError 'analysisRouting.model must be terra, gpt-5.6-terra, gpt-6, or gpt-6-astra'
 }
 if (-not (Has-Text $plan.analysisRouting.module)) {
     Add-PlanError 'analysisRouting.module must not be empty'

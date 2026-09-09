@@ -59,15 +59,17 @@ Run the full EVIDENCE -> CONTRACT -> IMPLEMENT -> VERIFY workflow and the full s
 
 Resolve the canonical server root as `<slot-fe-client-root>/games/Server`. Use `<server-root>/slot-be-runner-{replicationId}` for the target runner and `<server-root>/slot-simulator-game-ways` for simulator verification; never derive these repositories from the caller's current directory.
 
-## Trial-scheme structure gate
+## Scheme discovery and conditional structure gate
 
-Every target runner must pass a structural comparison between `<runner>/scheme.json` and exactly one corresponding trial-version file at `<server-root>/slot-rtp-scheme/试玩版json/{GAME_CODE}_*_试玩版.json` before CONTRACT, IMPLEMENT, acceptance, or dev/stg delivery. Derive `GAME_CODE` from proven runner registration/identity; never use a sibling game's JSON to fill a missing reference.
+Discover scheme evidence before CONTRACT, IMPLEMENT, acceptance, or dev/stg delivery, but do not require a runner-local `scheme.json` to run the task. Derive `GAME_CODE` from proven runner registration/identity; never use a sibling game's JSON to fill a missing reference.
 
-Run `<slot-fe-client-root>/.codex/skills/s-ser/scripts/validate-scheme-structure.ps1`. It must first require `slot-rtp-scheme` to be a clean attached worktree tracking `origin`, then perform a controlled pull as `git fetch --prune origin` plus a fast-forward-only upstream update. This pull is the repository's only permitted mutation: never create, edit, format, rename, delete, copy, stage, commit, push, stash, switch, rebase, reset, or create a merge commit there. A dirty repository, unsafe branch/upstream state, local-ahead/diverged history, sync failure, or post-sync dirtiness returns `NEEDS_SCHEME_SYNC_DECISION` and waits for the user.
+Run `<slot-fe-client-root>/.codex/skills/s-ser/scripts/validate-scheme-structure.ps1`. It must first require `slot-rtp-scheme` to be a clean attached worktree tracking `origin`, then perform a controlled pull as `git fetch --prune origin` plus a fast-forward-only upstream update. This pull is the repository's only permitted mutation: never create, edit, format, rename, delete, copy, stage, commit, push, stash, switch, rebase, reset, or create a merge commit there. A dirty repository, unsafe branch/upstream state, local-ahead/diverged history, sync failure, or post-sync dirtiness returns `NEEDS_SCHEME_SYNC_DECISION`; stop only scheme-dependent work and continue the rest of the task.
 
-Only after synchronization, locate the exact reference and record remote/branch/upstream, before/after commits, ahead/behind counts, post-sync dirty state, both paths and SHA-256 values, and the structured result under the normal evidence root. If no corresponding trial JSON exists, return `NEEDS_SCHEME_REFERENCE_DECISION`, exit, and wait for the user; never create or substitute a document. An ambiguous or unreadable reference returns `NEEDS_SCHEME_REFERENCE`. Recursive property names, nesting, object/array kinds, array lengths/per-index structures, and scalar JSON kinds must match; key order and scalar values may differ. This Gate proves format only, not RTP, weights, or game semantics.
+Only after synchronization, locate the exact reference and record remote/branch/upstream, before/after commits, ahead/behind counts, post-sync dirty state, the selected reference path/SHA-256, the local path/SHA-256 when present, and the structured result under the normal evidence root. Never create or substitute a reference document. An absent reference returns `NEEDS_SCHEME_REFERENCE_DECISION`; an ambiguous or unreadable reference returns `NEEDS_SCHEME_REFERENCE`.
 
-Stop on every non-`VALID` result, including `NEEDS_SCHEME_FILE`, `NEEDS_SCHEME_SYNC_DECISION`, `NEEDS_SCHEME_REFERENCE_DECISION`, `NEEDS_SCHEME_REFERENCE`, and `SCHEME_STRUCTURE_MISMATCH`. `demo.json`, a refresh workflow, build success, HTTP 200, or runner startup cannot replace this check. The controlled reference pull is the sole exception to `s_init planning contribution` read-only behavior; that mode still writes no project files and carries an unresolved status into the draft. `s_init execution` treats the Gate as blocking.
+When `<runner>/scheme.json` exists, compare it recursively with the reference: property names, nesting, object/array kinds, array lengths/per-index structures, and scalar JSON kinds must match; key order and scalar values may differ. When the local file is absent, automatically use the uniquely matched, valid reference as the scheme source and accept `VALID` with `validationMode: REFERENCE_FALLBACK`, `runnerSchemePresent: false`, and `structureCompared: false`; do not create or copy a local file. This check proves format availability only, not RTP, weights, or game semantics.
+
+Never return `NEEDS_SCHEME_FILE` merely because `<runner>/scheme.json` is absent. Scheme sync/reference failures and `SCHEME_STRUCTURE_MISMATCH` block only scheme-dependent work; record them and continue scheme-independent CONTRACT, IMPLEMENT, acceptance, and delivery. A missing runner path returns `NEEDS_RUNNER`. `demo.json`, a refresh workflow, build success, HTTP 200, or runner startup cannot replace scheme evidence when the current work depends on it. The controlled reference pull is the sole exception to `s_init planning contribution` read-only behavior; that mode still writes no project files and carries an unresolved status into the draft. In `s_init execution`, attach unresolved scheme status only to scheme-dependent acceptance IDs rather than blocking the whole server Goal.
 
 Read `<slot-fe-client-root>/.codex/agents/s-cli-agent/references/slot-function-reference.md` before planning. This is the same function lookup table used by `@s_cli`.
 
@@ -100,7 +102,7 @@ Starting, restarting, or validating a local runner must preserve all server inst
 
 ### 1. EVIDENCE
 
-1. Read repository instructions, Git state, the target server `README.md`, design/spec documents, settings/scheme files, the corresponding `slot-rtp-scheme/试玩版json` reference, and existing tests before changing code. Run the trial-scheme structure Gate and preserve its result.
+1. Read repository instructions, Git state, the target server `README.md`, design/spec documents, settings and any local scheme file, the corresponding `slot-rtp-scheme/试玩版json` reference, and existing tests before changing code. Run scheme discovery/conditional structure validation and preserve its result without blocking unrelated work for a missing local file.
 2. Outside the explicit `s_init` modes, locate and read the corresponding resource project's `doc/project_info.md` and relevant reports before interpreting protocol fields. In `s_init execution` mode, use the target client's local `{replicationId}_res`, archived JS, saved runtime evidence, and current consumers instead. Trace the current game's client/resource consumers and serialized bindings, and record the path and baseline used.
 3. Build an evidence table with source, observed fact, confidence, target contract, and unresolved items. Prefer evidence in this order: signed game specification or provider documentation, recorded competitor runtime response/capture, current-game client/resource behavior, then a sibling runner only for architecture patterns.
 4. Inspect the current client mapper as a compatibility boundary. A copied or legacy mapper cannot prove a new server layout or custom-field contract.
@@ -145,7 +147,7 @@ Add focused tests for every altered rule. At minimum, test the applicable bounda
 - Free/bonus trigger, restore, retrigger, buy entry, exit, and state reset.
 - Max-win terminal frame, cap amount, award emission, and final snapshot.
 - Response field serialization and client-facing projection.
-- Recursive `scheme.json` structure against the uniquely matched trial-version JSON, with both hashes and the reference repository baseline recorded.
+- When local `scheme.json` exists, its recursive structure against the uniquely matched trial-version JSON, with both hashes and the reference repository baseline recorded; otherwise, the validated reference fallback path/hash and `structureCompared: false`.
 
 Run the local equivalents of:
 

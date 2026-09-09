@@ -27,7 +27,7 @@ function Get-CanonicalPath([string]$Value) {
 
 function Stop-Validation([string]$Status, [string]$Message, [hashtable]$Details = @{}) {
     $result = [ordered]@{
-        schemaVersion = 2
+        schemaVersion = 3
         status = $Status
         message = $Message
     }
@@ -139,7 +139,7 @@ function Compare-JsonStructure(
 
 $canonicalRunner = Get-CanonicalPath $RunnerPath
 if (-not (Has-Text $canonicalRunner) -or -not (Test-Path -LiteralPath $canonicalRunner -PathType Container)) {
-    Stop-Validation 'NEEDS_SCHEME_FILE' "runner path does not exist: $RunnerPath"
+    Stop-Validation 'NEEDS_RUNNER' "runner path does not exist: $RunnerPath"
 }
 
 $runnerName = Split-Path -Leaf $canonicalRunner
@@ -154,19 +154,14 @@ if ($GameCode -notmatch '^[A-Za-z0-9][A-Za-z0-9_-]*$') {
 }
 
 $schemePath = Join-Path $canonicalRunner 'scheme.json'
-if (-not (Test-Path -LiteralPath $schemePath -PathType Leaf)) {
-    Stop-Validation 'NEEDS_SCHEME_FILE' "runner scheme.json does not exist: $schemePath" @{
-        gameCode = $GameCode
-        runnerPath = $canonicalRunner
-    }
-}
+$runnerSchemePresent = Test-Path -LiteralPath $schemePath -PathType Leaf
 
 if (-not (Has-Text $SchemeRepositoryPath)) {
     $SchemeRepositoryPath = Join-Path (Split-Path -Parent $canonicalRunner) 'slot-rtp-scheme'
 }
 $canonicalRepository = Get-CanonicalPath $SchemeRepositoryPath
 if (-not (Has-Text $canonicalRepository) -or -not (Test-Path -LiteralPath $canonicalRepository -PathType Container)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' "slot-rtp-scheme repository does not exist; stop and wait for user decision: $SchemeRepositoryPath" @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' "slot-rtp-scheme repository does not exist; scheme-dependent work needs a user decision: $SchemeRepositoryPath" @{
         gameCode = $GameCode
         schemePath = $schemePath
         referenceRepositoryPath = $canonicalRepository
@@ -175,7 +170,7 @@ if (-not (Has-Text $canonicalRepository) -or -not (Test-Path -LiteralPath $canon
 
 $gitCommand = Get-Command git -ErrorAction SilentlyContinue
 if ($null -eq $gitCommand) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'git is required to synchronize slot-rtp-scheme; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'git is required to synchronize slot-rtp-scheme; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
     }
@@ -185,7 +180,7 @@ $gitTop = Invoke-GitCommand $canonicalRepository @('rev-parse', '--show-toplevel
 $gitTopPath = Get-LastOutputLine $gitTop
 if ($gitTop.ExitCode -ne 0 -or -not (Has-Text $gitTopPath) -or
     -not (Get-CanonicalPath $gitTopPath).Equals($canonicalRepository, [StringComparison]::OrdinalIgnoreCase)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme path must be its own Git top level; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme path must be its own Git top level; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         gitOutput = $gitTop.Output
@@ -195,7 +190,7 @@ if ($gitTop.ExitCode -ne 0 -or -not (Has-Text $gitTopPath) -or
 $remote = Invoke-GitCommand $canonicalRepository @('remote', 'get-url', 'origin')
 $referenceRemoteUrl = Get-LastOutputLine $remote
 if ($remote.ExitCode -ne 0 -or -not (Has-Text $referenceRemoteUrl)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must have a readable origin remote; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must have a readable origin remote; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         gitOutput = $remote.Output
@@ -204,7 +199,7 @@ if ($remote.ExitCode -ne 0 -or -not (Has-Text $referenceRemoteUrl)) {
 
 $statusBefore = Invoke-GitCommand $canonicalRepository @('status', '--porcelain=v1')
 if ($statusBefore.ExitCode -ne 0 -or $statusBefore.Output.Count -gt 0) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must be clean before pull; do not modify it and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must be clean before pull; do not modify it automatically' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -215,7 +210,7 @@ if ($statusBefore.ExitCode -ne 0 -or $statusBefore.Output.Count -gt 0) {
 $branchResult = Invoke-GitCommand $canonicalRepository @('symbolic-ref', '--quiet', '--short', 'HEAD')
 $referenceBranch = Get-LastOutputLine $branchResult
 if ($branchResult.ExitCode -ne 0 -or -not (Has-Text $referenceBranch)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must be on an attached branch; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must be on an attached branch; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -225,7 +220,7 @@ if ($branchResult.ExitCode -ne 0 -or -not (Has-Text $referenceBranch)) {
 $upstreamResult = Invoke-GitCommand $canonicalRepository @('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}')
 $referenceUpstream = Get-LastOutputLine $upstreamResult
 if ($upstreamResult.ExitCode -ne 0 -or -not $referenceUpstream.StartsWith('origin/', [StringComparison]::Ordinal)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must track an origin branch; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must track an origin branch; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -238,7 +233,7 @@ if ($upstreamResult.ExitCode -ne 0 -or -not $referenceUpstream.StartsWith('origi
 $commitBeforeResult = Invoke-GitCommand $canonicalRepository @('rev-parse', 'HEAD')
 $referenceCommitBeforeSync = Get-LastOutputLine $commitBeforeResult
 if ($commitBeforeResult.ExitCode -ne 0 -or -not (Has-Text $referenceCommitBeforeSync)) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must have a readable HEAD commit; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme must have a readable HEAD commit; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
     }
@@ -246,7 +241,7 @@ if ($commitBeforeResult.ExitCode -ne 0 -or -not (Has-Text $referenceCommitBefore
 
 $fetchResult = Invoke-GitCommand $canonicalRepository @('fetch', '--prune', 'origin')
 if ($fetchResult.ExitCode -ne 0) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to fetch the slot-rtp-scheme origin; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to fetch the slot-rtp-scheme origin; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -261,7 +256,7 @@ $divergenceResult = Invoke-GitCommand $canonicalRepository @('rev-list', '--left
 $divergenceLine = Get-LastOutputLine $divergenceResult
 $divergenceParts = @($divergenceLine -split '\s+' | Where-Object { Has-Text $_ })
 if ($divergenceResult.ExitCode -ne 0 -or $divergenceParts.Count -ne 2) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to compare the local and upstream slot-rtp-scheme branches; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to compare the local and upstream slot-rtp-scheme branches; scheme-dependent work needs a user decision' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceBranch = $referenceBranch
@@ -272,7 +267,7 @@ if ($divergenceResult.ExitCode -ne 0 -or $divergenceParts.Count -ne 2) {
 $referenceAheadBeforeSync = [int]$divergenceParts[0]
 $referenceBehindBeforeSync = [int]$divergenceParts[1]
 if ($referenceAheadBeforeSync -gt 0) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme is locally ahead or diverged; do not rebase, reset, or push it and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme is locally ahead or diverged; do not rebase, reset, or push it automatically' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -287,7 +282,7 @@ if ($referenceAheadBeforeSync -gt 0) {
 if ($referenceBehindBeforeSync -gt 0) {
     $fastForwardResult = Invoke-GitCommand $canonicalRepository @('-c', 'core.hooksPath=NUL', 'merge', '--ff-only', $referenceUpstream)
     if ($fastForwardResult.ExitCode -ne 0) {
-        Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to fast-forward slot-rtp-scheme; do not repair it automatically and wait for user decision' @{
+        Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'failed to fast-forward slot-rtp-scheme; do not repair it automatically' @{
             gameCode = $GameCode
             referenceRepositoryPath = $canonicalRepository
             referenceRemoteUrl = $referenceRemoteUrl
@@ -306,7 +301,7 @@ $referenceCommit = Get-LastOutputLine $commitAfterResult
 $statusAfter = Invoke-GitCommand $canonicalRepository @('status', '--porcelain=v1')
 $referenceDirty = $statusAfter.ExitCode -ne 0 -or $statusAfter.Output.Count -gt 0
 if ($commitAfterResult.ExitCode -ne 0 -or -not (Has-Text $referenceCommit) -or $referenceDirty) {
-    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme is not clean after synchronization; stop and wait for user decision' @{
+    Stop-Validation 'NEEDS_SCHEME_SYNC_DECISION' 'slot-rtp-scheme is not clean after synchronization; do not modify it automatically' @{
         gameCode = $GameCode
         referenceRepositoryPath = $canonicalRepository
         referenceRemoteUrl = $referenceRemoteUrl
@@ -337,7 +332,7 @@ $syncDetails = @{
 
 $trialRoot = Join-Path $canonicalRepository $trialDirectoryName
 if (-not (Test-Path -LiteralPath $trialRoot -PathType Container)) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' 'trial-scheme directory is absent after pull; exit and wait for user decision' (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' 'trial-scheme directory is absent after synchronization; scheme-dependent work needs a user decision' (@{
         gameCode = $GameCode
         schemePath = $schemePath
         trialRoot = $trialRoot
@@ -351,14 +346,14 @@ $references = @(Get-ChildItem -LiteralPath $trialRoot -File -Filter '*.json' | W
     $_.Name.EndsWith($suffix, [StringComparison]::OrdinalIgnoreCase)
 })
 if ($references.Count -eq 0) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' "no corresponding trial JSON exists for $GameCode after pull; exit and wait for user decision" (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' "no corresponding trial JSON exists for $GameCode after synchronization; scheme-dependent work needs a user decision" (@{
         gameCode = $GameCode
         trialRoot = $trialRoot
         candidates = @()
     } + $syncDetails)
 }
 if ($references.Count -gt 1) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "expected exactly one trial JSON for $GameCode, found $($references.Count); stop and wait for user decision" (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "expected exactly one trial JSON for $GameCode, found $($references.Count); scheme-dependent work needs a user decision" (@{
         gameCode = $GameCode
         trialRoot = $trialRoot
         candidates = @($references | ForEach-Object { $_.FullName })
@@ -369,11 +364,45 @@ $referencePath = $references[0].FullName
 try {
     $referenceJson = Get-Content -LiteralPath $referencePath -Raw -Encoding UTF8 | ConvertFrom-Json
 } catch {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "reference JSON is invalid; stop and wait for user decision: $($_.Exception.Message)" (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "reference JSON is invalid; scheme-dependent work needs a user decision: $($_.Exception.Message)" (@{
         gameCode = $GameCode
         referencePath = $referencePath
     } + $syncDetails)
 }
+$referenceHash = (Get-FileHash -LiteralPath $referencePath -Algorithm SHA256).Hash.ToLowerInvariant()
+
+if (-not $runnerSchemePresent) {
+    [ordered]@{
+        schemaVersion = 3
+        status = 'VALID'
+        validationMode = 'REFERENCE_FALLBACK'
+        gameCode = $GameCode
+        runnerPath = $canonicalRunner
+        runnerSchemePresent = $false
+        structureCompared = $false
+        schemeSource = 'slot-rtp-scheme'
+        schemePath = $null
+        expectedRunnerSchemePath = $schemePath
+        schemeSha256 = $null
+        effectiveSchemePath = $referencePath
+        referenceRepositoryPath = $canonicalRepository
+        referenceRemoteUrl = $referenceRemoteUrl
+        referenceBranch = $referenceBranch
+        referenceUpstream = $referenceUpstream
+        referenceSyncStrategy = 'fetch-prune+merge-ff-only'
+        referenceCommitBeforeSync = $referenceCommitBeforeSync
+        referenceCommit = $referenceCommit
+        referenceAheadBeforeSync = $referenceAheadBeforeSync
+        referenceBehindBeforeSync = $referenceBehindBeforeSync
+        referencePulled = $referencePulled
+        referenceDirty = $false
+        referencePath = $referencePath
+        referenceSha256 = $referenceHash
+        differenceCount = 0
+    } | ConvertTo-Json -Depth 6
+    exit 0
+}
+
 try {
     $schemeJson = Get-Content -LiteralPath $schemePath -Raw -Encoding UTF8 | ConvertFrom-Json
 } catch {
@@ -387,7 +416,6 @@ try {
 $differences = [System.Collections.Generic.List[object]]::new()
 Compare-JsonStructure $referenceJson $schemeJson '$' $differences
 $schemeHash = (Get-FileHash -LiteralPath $schemePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$referenceHash = (Get-FileHash -LiteralPath $referencePath -Algorithm SHA256).Hash.ToLowerInvariant()
 
 if ($differences.Count -gt 0) {
     Stop-Validation 'SCHEME_STRUCTURE_MISMATCH' 'scheme.json does not match the corresponding trial JSON structure' (@{
@@ -402,11 +430,17 @@ if ($differences.Count -gt 0) {
 }
 
 [ordered]@{
-    schemaVersion = 2
+    schemaVersion = 3
     status = 'VALID'
+    validationMode = 'STRUCTURE_COMPARISON'
     gameCode = $GameCode
+    runnerPath = $canonicalRunner
+    runnerSchemePresent = $true
+    structureCompared = $true
+    schemeSource = 'runner'
     schemePath = $schemePath
     schemeSha256 = $schemeHash
+    effectiveSchemePath = $schemePath
     referenceRepositoryPath = $canonicalRepository
     referenceRemoteUrl = $referenceRemoteUrl
     referenceBranch = $referenceBranch

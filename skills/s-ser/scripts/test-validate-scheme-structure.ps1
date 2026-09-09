@@ -68,6 +68,26 @@ try {
     if ($valid.Json.referencePulled -ne $true -or $valid.Json.referenceCommitBeforeSync -eq $valid.Json.referenceCommit) {
         throw "matching structure did not pull the remote update. Output: $($valid.Text)"
     }
+    if ($valid.Json.validationMode -ne 'STRUCTURE_COMPARISON' -or
+        $valid.Json.runnerSchemePresent -ne $true -or
+        $valid.Json.structureCompared -ne $true) {
+        throw "matching structure did not report comparison mode. Output: $($valid.Text)"
+    }
+
+    Remove-Item -LiteralPath $schemePath -Force
+    $referenceFallback = Invoke-Validator
+    Assert-Result $referenceFallback 0 'VALID' 'missing local scheme reference fallback'
+    if ($referenceFallback.Json.validationMode -ne 'REFERENCE_FALLBACK' -or
+        $referenceFallback.Json.runnerSchemePresent -ne $false -or
+        $referenceFallback.Json.structureCompared -ne $false -or
+        $referenceFallback.Json.schemeSource -ne 'slot-rtp-scheme' -or
+        $referenceFallback.Json.effectiveSchemePath -ne $referenceFallback.Json.referencePath) {
+        throw "missing local scheme did not use the reference fallback. Output: $($referenceFallback.Text)"
+    }
+    if (Test-Path -LiteralPath $schemePath) {
+        throw 'reference fallback unexpectedly created runner scheme.json'
+    }
+    [IO.File]::WriteAllText($schemePath, '{"flags":[false,"y",2],"config":{"0":{"weight":999,"id":8}},"id":2}')
 
     [IO.File]::WriteAllText($schemePath, '{"id":2,"config":{"0":{"id":8}},"flags":[false,"y",2]}')
     $mismatch = Invoke-Validator
@@ -98,9 +118,6 @@ try {
     $locallyAheadReferenceRepository = Invoke-Validator
     Assert-Result $locallyAheadReferenceRepository 1 'NEEDS_SCHEME_SYNC_DECISION' 'locally ahead reference repository'
 
-    Remove-Item -LiteralPath $schemePath -Force
-    $missingScheme = Invoke-Validator
-    Assert-Result $missingScheme 1 'NEEDS_SCHEME_FILE' 'missing scheme'
 } finally {
     if (Test-Path -LiteralPath $testRoot) {
         Remove-Item -LiteralPath $testRoot -Recurse -Force

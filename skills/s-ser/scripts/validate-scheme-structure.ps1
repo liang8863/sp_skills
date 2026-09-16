@@ -3,12 +3,18 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$RunnerPath,
     [string]$GameCode,
-    [string]$SchemeRepositoryPath
+    [string]$SchemeRepositoryPath,
+    [ValidateSet('Trial', 'Formal')]
+    [string]$ReferenceEdition = 'Trial'
 )
 
 $ErrorActionPreference = 'Stop'
-$trialLabel = -join @([char]0x8BD5, [char]0x73A9, [char]0x7248)
-$trialDirectoryName = $trialLabel + 'json'
+$referenceLabel = if ($ReferenceEdition -eq 'Formal') {
+    -join @([char]0x6B63, [char]0x5F0F, [char]0x7248)
+} else {
+    -join @([char]0x8BD5, [char]0x73A9, [char]0x7248)
+}
+$referenceDirectoryName = $referenceLabel + 'json'
 
 function Has-Text([string]$Value) {
     return -not [string]::IsNullOrWhiteSpace($Value)
@@ -317,6 +323,7 @@ if ($commitAfterResult.ExitCode -ne 0 -or -not (Has-Text $referenceCommit) -or $
 $referencePulled = $referenceCommitBeforeSync -cne $referenceCommit
 
 $syncDetails = @{
+    referenceEdition = $ReferenceEdition
     referenceRepositoryPath = $canonicalRepository
     referenceRemoteUrl = $referenceRemoteUrl
     referenceBranch = $referenceBranch
@@ -330,32 +337,32 @@ $syncDetails = @{
     referenceDirty = $false
 }
 
-$trialRoot = Join-Path $canonicalRepository $trialDirectoryName
-if (-not (Test-Path -LiteralPath $trialRoot -PathType Container)) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' 'trial-scheme directory is absent after synchronization; scheme-dependent work needs a user decision' (@{
+$referenceSearchRoot = Join-Path $canonicalRepository $referenceDirectoryName
+if (-not (Test-Path -LiteralPath $referenceSearchRoot -PathType Container)) {
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' 'selected-edition scheme directory is absent after synchronization; scheme-dependent work needs a user decision' (@{
         gameCode = $GameCode
         schemePath = $schemePath
-        trialRoot = $trialRoot
+        referenceSearchRoot = $referenceSearchRoot
     } + $syncDetails)
 }
 
 $prefix = "$GameCode`_"
-$suffix = '_' + $trialLabel + '.json'
-$references = @(Get-ChildItem -LiteralPath $trialRoot -File -Filter '*.json' | Where-Object {
+$suffix = '_' + $referenceLabel + '.json'
+$references = @(Get-ChildItem -LiteralPath $referenceSearchRoot -File -Filter '*.json' | Where-Object {
     $_.Name.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -and
     $_.Name.EndsWith($suffix, [StringComparison]::OrdinalIgnoreCase)
 })
 if ($references.Count -eq 0) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' "no corresponding trial JSON exists for $GameCode after synchronization; scheme-dependent work needs a user decision" (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE_DECISION' "no corresponding selected-edition JSON exists for $GameCode after synchronization; scheme-dependent work needs a user decision" (@{
         gameCode = $GameCode
-        trialRoot = $trialRoot
+        referenceSearchRoot = $referenceSearchRoot
         candidates = @()
     } + $syncDetails)
 }
 if ($references.Count -gt 1) {
-    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "expected exactly one trial JSON for $GameCode, found $($references.Count); scheme-dependent work needs a user decision" (@{
+    Stop-Validation 'NEEDS_SCHEME_REFERENCE' "expected exactly one selected-edition JSON for $GameCode, found $($references.Count); scheme-dependent work needs a user decision" (@{
         gameCode = $GameCode
-        trialRoot = $trialRoot
+        referenceSearchRoot = $referenceSearchRoot
         candidates = @($references | ForEach-Object { $_.FullName })
     } + $syncDetails)
 }
@@ -375,6 +382,9 @@ if (-not $runnerSchemePresent) {
     [ordered]@{
         schemaVersion = 3
         status = 'VALID'
+        referenceEdition = $ReferenceEdition
+        mathematicalSemanticsValidated = $false
+        runtimeConsumptionValidated = $false
         validationMode = 'REFERENCE_FALLBACK'
         gameCode = $GameCode
         runnerPath = $canonicalRunner
@@ -418,7 +428,7 @@ Compare-JsonStructure $referenceJson $schemeJson '$' $differences
 $schemeHash = (Get-FileHash -LiteralPath $schemePath -Algorithm SHA256).Hash.ToLowerInvariant()
 
 if ($differences.Count -gt 0) {
-    Stop-Validation 'SCHEME_STRUCTURE_MISMATCH' 'scheme.json does not match the corresponding trial JSON structure' (@{
+    Stop-Validation 'SCHEME_STRUCTURE_MISMATCH' 'scheme.json does not match the corresponding selected-edition JSON structure' (@{
         gameCode = $GameCode
         schemePath = $schemePath
         schemeSha256 = $schemeHash
@@ -432,6 +442,9 @@ if ($differences.Count -gt 0) {
 [ordered]@{
     schemaVersion = 3
     status = 'VALID'
+    referenceEdition = $ReferenceEdition
+    mathematicalSemanticsValidated = $false
+    runtimeConsumptionValidated = $false
     validationMode = 'STRUCTURE_COMPARISON'
     gameCode = $GameCode
     runnerPath = $canonicalRunner

@@ -17,7 +17,7 @@ flowchart LR
     Engine --> Runner[slot-be-runner-game rules and hooks]
     Host --> Management[slot-be-games-management catalog and status]
     Host --> Infra[(Redis, MySQL, wallet, MQ)]
-    Scheme[slot-rtp-scheme reference JSON] -. structure and review reference .-> Runner
+    Scheme[slot-rtp-scheme JSON and mathematical documents] -. configuration and rule evidence .-> Runner
 ```
 
 The usual request path is
@@ -33,7 +33,7 @@ The usual request path is
 | Shared Spin/Layout lifecycle, Ways/Lines/Cluster detection, RNG, animation queue, retry, RTP manager, seed library, wallet settlement | `slot-be-engine-sdk` | Engine SDK |
 | REST/gRPC routes, DI/config boot, Spin/Buy/lastSpin/bets/schemes endpoints, debug endpoints, simulation queue/service integration | `slot-be-games-ways` | Ways service host |
 | Game catalog lookup, enable/disable status, game metadata cache | `slot-be-games-management` | Games management service |
-| Trial/formal scheme JSON lookup or structural comparison | `slot-rtp-scheme` | Scheme data repository; normally read-only |
+| Trial/formal JSON, mathematical game documents, basic rules or structural comparison | `slot-rtp-scheme` | Scheme data repository; normally read-only |
 | Render real response frames, replay `previous_frame_id`, inspect game-specific detail fields | `slot-simulator-game-ways` | Simulator UI |
 
 ## Shared repositories
@@ -89,16 +89,20 @@ The usual request path is
 
 - Local path: `<server-root>/slot-rtp-scheme`
 - GitHub: [jp-sunshine/slot-rtp-scheme](https://github.com/jp-sunshine/slot-rtp-scheme)
-- Type: versioned JSON data/reference repository; it has no Go or Node runtime.
-- Function: stores game RTP/scheme documents under `试玩版json/` and `正式版json/`, with
-  supporting notes under `文档说明/`.
-- Use it to locate the exact `{GAME_CODE}_*_试玩版.json` reference. It is the automatic
-  fallback scheme source when the target runner has no local `scheme.json`, and the structural
-  comparison reference when a local file exists. The selected JSON can constrain shape but
-  does not by itself prove weights, RTP, deployed values, or target-game semantics.
-- Keep it read-only except for the controlled clean-worktree fast-forward expressly required
-  by the scheme discovery Gate. Never create a missing reference, copy one into the runner, or
-  substitute another game. Missing local `scheme.json` does not block scheme-independent work.
+- Type: versioned configuration and mathematical-reference repository; no Go or Node runtime.
+- Contents: `试玩版json/` and `正式版json/` hold values/structure; `文档说明/` holds game-specific
+  `.docx`, `00_*基础规则.docx`, `RTP控制算法逻辑.docx` and `数值参考文档.xlsx`.
+- For probability or field semantics, follow [rtp-math-evidence.md](rtp-math-evidence.md):
+  search by game code and Chinese name, read the matching game document and applicable basic
+  rules, and inspect workbook entries when needed. DOCX filenames may have only numeric
+  prefixes and Chinese names; a JSON-only search misses their mathematical contract.
+- Use the selected Trial/Formal edition consistently. Reuse an already authorized Formal
+  reference when Trial is absent. A unique valid reference supplies a fallback when runner
+  `scheme.json` is absent; when present, compare structure without confusing it with actual
+  configuration consumption, measured RTP or deployed values.
+- Keep the repository read-only except for the controlled clean-worktree fast-forward
+  required by scheme discovery. Do not create, move or substitute reference documents.
+  Keep any text extraction in task-owned evidence/temporary paths.
 
 ### `slot-simulator-game-ways`
 

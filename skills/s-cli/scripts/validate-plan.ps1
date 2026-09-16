@@ -433,6 +433,41 @@ if ($plan.version -eq 2) {
     $scriptsRoot = Normalize-RelativePath ([string]$reference.scriptsRoot)
     $projectInfo = Normalize-RelativePath ([string]$reference.projectInfo)
     $expectedResourceRoot = "assets/resources/$($replicationId)_res"
+    $expectedOriginalProjectRoot = if ($hasSafeReplicationId) { "CC3Proj/${replicationId}_UI" } else { '' }
+    $originalProjectPath = if (Has-Text $expectedOriginalProjectRoot) {
+        Join-Path $gamesRoot ($expectedOriginalProjectRoot -replace '/', [IO.Path]::DirectorySeparatorChar)
+    } else { '' }
+    $originalProjectAvailable = $false
+    $originalProjectExists = Has-Text $originalProjectPath -and (Test-Path -LiteralPath $originalProjectPath -PathType Container)
+    $originalProjectSafe = $originalProjectExists -and -not (Test-ReparsePoint $originalProjectPath)
+    if ($originalProjectExists -and $originalProjectSafe) {
+        $originalProjectInventory = Get-LocalTreeInventory $originalProjectPath
+        $originalProjectAvailable = Has-Text $originalProjectInventory.firstMatchingFile -and
+            -not (Has-Text $originalProjectInventory.firstReparsePoint)
+    }
+    if (Has-Property $reference 'originalProject') {
+        $originalProject = $reference.originalProject
+        if ($null -eq $originalProject) {
+            Add-PlanError 'localReference.originalProject must be an object when provided'
+        } else {
+            $originalProjectStatus = ([string]$originalProject.status).ToUpperInvariant()
+            if (@('FOUND', 'NOT_FOUND_IGNORED') -notcontains $originalProjectStatus) {
+                Add-PlanError 'localReference.originalProject.status must be FOUND or NOT_FOUND_IGNORED'
+            }
+            if (-not (Has-Text $originalProject.root) -or
+                -not (Is-SafeProjectRelativePath ([string]$originalProject.root)) -or
+                -not (Normalize-RelativePath ([string]$originalProject.root)).Equals($expectedOriginalProjectRoot, [StringComparison]::OrdinalIgnoreCase)) {
+                Add-PlanError "localReference.originalProject.root must be the games-root-relative path: $expectedOriginalProjectRoot"
+            }
+            if ((Has-Property $originalProject 'gameId') -and (Has-Text $originalProject.gameId) -and
+                -not ([string]$originalProject.gameId).Equals($replicationId, [StringComparison]::OrdinalIgnoreCase)) {
+                Add-PlanError "localReference.originalProject.gameId must match localReference.replicationId '$replicationId'"
+            }
+            if ((Has-Property $originalProject 'readOnly') -and $originalProject.readOnly -ne $true) {
+                Add-PlanError 'localReference.originalProject.readOnly must be true'
+            }
+        }
+    }
     if (-not (Is-SafeProjectRelativePath $reference.resourceRoot) -or
         -not $resourceRoot.Equals($expectedResourceRoot, [StringComparison]::OrdinalIgnoreCase)) {
         Add-PlanError "localReference.resourceRoot must be the project-relative path: $expectedResourceRoot"
@@ -457,6 +492,8 @@ if ($plan.version -eq 2) {
     $resourcePath = $null
     $scriptsPath = $null
     $projectInfoPath = $null
+    $evidence = @($reference.evidence | Where-Object { $null -ne $_ })
+    $usesLegacyScriptEvidence = @($evidence | Where-Object { ([string]$_.kind) -ieq 'legacy-script' }).Count -gt 0
     if (-not $SkipPathChecks -and $canInspectDerivedProject -and $hasValidReferenceRoots) {
         $resourcePath = Join-Path $derivedProjectPath ($expectedResourceRoot -replace '/', [IO.Path]::DirectorySeparatorChar)
         $scriptsPath = Join-Path $derivedProjectPath 'doc\js_scripts'
@@ -471,13 +508,15 @@ if ($plan.version -eq 2) {
             Add-PlanError "Local competitor resource directory is empty: $resourcePath"
         }
 
-        $scriptsInventory = Get-LocalTreeInventory $scriptsPath '.js'
-        if (-not (Test-Path -LiteralPath $scriptsPath -PathType Container)) {
-            Add-PlanError "Local competitor script directory does not exist: $scriptsPath"
-        } elseif (Has-Text $scriptsInventory.firstReparsePoint) {
-            Add-PlanError "Local competitor script directory cannot contain a reparse point: $($scriptsInventory.firstReparsePoint)"
-        } elseif (-not (Has-Text $scriptsInventory.firstMatchingFile)) {
-            Add-PlanError "Local competitor script directory contains no JavaScript: $scriptsPath"
+        if ($usesLegacyScriptEvidence) {
+            $scriptsInventory = Get-LocalTreeInventory $scriptsPath '.js'
+            if (-not (Test-Path -LiteralPath $scriptsPath -PathType Container)) {
+                Add-PlanError "Local competitor script directory required by legacy-script evidence does not exist: $scriptsPath"
+            } elseif (Has-Text $scriptsInventory.firstReparsePoint) {
+                Add-PlanError "Local competitor script directory required by legacy-script evidence cannot contain a reparse point: $($scriptsInventory.firstReparsePoint)"
+            } elseif (-not (Has-Text $scriptsInventory.firstMatchingFile)) {
+                Add-PlanError "Local competitor script directory required by legacy-script evidence contains no JavaScript: $scriptsPath"
+            }
         }
 
         if (-not (Test-Path -LiteralPath $projectInfoPath -PathType Leaf)) {
@@ -512,10 +551,8 @@ if ($plan.version -eq 2) {
         }
     }
 
-    $evidence = @($reference.evidence | Where-Object { $null -ne $_ })
     if ($evidence.Count -eq 0) { Add-PlanError 'localReference.evidence must contain at least one item' }
     $resourceEvidenceCount = 0
-    $legacyScriptEvidenceCount = 0
     foreach ($item in $evidence) {
         foreach ($field in @('kind', 'source', 'target', 'behavior', 'adaptation')) {
             if (-not (Has-Text $item.$field)) { Add-PlanError "Each localReference.evidence item requires $field" }
@@ -532,6 +569,8 @@ if ($plan.version -eq 2) {
         }
 
         $allowedSourceRoot = $null
+        $allowedSourceBase = $derivedProjectPath
+        $sourceScope = 'target'
         switch ([string]$item.kind) {
             'resource' {
                 if (-not (Is-RelativePathWithin $source $resourceRoot)) {
@@ -547,7 +586,6 @@ if ($plan.version -eq 2) {
                 } elseif (-not ([IO.Path]::GetExtension($sourcePath)).Equals('.js', [StringComparison]::OrdinalIgnoreCase)) {
                     Add-PlanError "Legacy-script evidence source must be a JavaScript file ending in .js: $source"
                 } else {
-                    $legacyScriptEvidenceCount++
                     $allowedSourceRoot = $scriptsPath
                 }
             }
@@ -558,13 +596,26 @@ if ($plan.version -eq 2) {
                     $allowedSourceRoot = $projectInfoPath
                 }
             }
+            'original-project' {
+                if (-not (Has-Text $expectedOriginalProjectRoot) -or
+                    -not (Is-RelativePathWithin $source $expectedOriginalProjectRoot)) {
+                    Add-PlanError "Original-project evidence must be under $($expectedOriginalProjectRoot): $source"
+                } else {
+                    $allowedSourceRoot = $originalProjectPath
+                    $allowedSourceBase = $gamesRoot
+                    $sourceScope = 'original-project'
+                }
+            }
             default {
-                Add-PlanError "localReference evidence kind must be resource, legacy-script, or project-info: $($item.kind)"
+                Add-PlanError "localReference evidence kind must be resource, legacy-script, project-info, or original-project: $($item.kind)"
             }
         }
 
         if (-not $SkipPathChecks -and $canInspectDerivedProject -and (Has-Text $allowedSourceRoot)) {
-            $localSourcePath = Get-CanonicalPath (Join-Path $derivedProjectPath ((Normalize-RelativePath $sourcePath) -replace '/', [IO.Path]::DirectorySeparatorChar))
+            if ($sourceScope -eq 'original-project' -and -not $originalProjectAvailable) {
+                continue
+            }
+            $localSourcePath = Get-CanonicalPath (Join-Path $allowedSourceBase ((Normalize-RelativePath $sourcePath) -replace '/', [IO.Path]::DirectorySeparatorChar))
             if (-not (Test-CanonicalPathWithin $localSourcePath $allowedSourceRoot)) {
                 Add-PlanError "Local competitor evidence source escaped its fixed root: $source"
             } elseif (-not (Test-Path -LiteralPath $localSourcePath -PathType Leaf)) {
@@ -579,9 +630,6 @@ if ($plan.version -eq 2) {
     }
     if ($resourceEvidenceCount -eq 0) {
         Add-PlanError 'localReference.evidence must contain at least one resource behavior evidence item under resourceRoot'
-    }
-    if ($legacyScriptEvidenceCount -eq 0) {
-        Add-PlanError 'localReference.evidence must contain at least one legacy-script behavior evidence item under scriptsRoot'
     }
     if ((Get-NonNullCount $reference.uncovered) -gt 0) { Add-PlanError 'localReference.uncovered must be empty' }
 } elseif ($plan.version -eq 1) {

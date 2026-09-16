@@ -11,14 +11,32 @@ Use this skill to verify and operate the local Funplay Cocos MCP server from Cod
 
 ## Discovery Order
 
-1. Try the built-in MCP wrappers first:
+1. When a target Cocos project is known, read `<target-project>/funplay-cocos-mcp.config.json` before using wrappers or a remembered port. Its valid non-empty `host` and integer `port` from `1` through `65535` define the target's configured endpoint. For example:
+
+```powershell
+$targetProject = 'D:\\WorkSpace\\slot-fe-client\\games\\slot-fe-flp'
+$cocosMcpConfigPath = Join-Path $targetProject 'funplay-cocos-mcp.config.json'
+$cocosMcpConfig = Get-Content -Raw -Encoding UTF8 -LiteralPath $cocosMcpConfigPath | ConvertFrom-Json
+$cocosMcpHost = [string]$cocosMcpConfig.host
+$cocosMcpPort = [int]$cocosMcpConfig.port
+
+if ([string]::IsNullOrWhiteSpace($cocosMcpHost) -or $cocosMcpPort -lt 1 -or $cocosMcpPort -gt 65535) {
+  throw 'Invalid funplay-cocos-mcp.config.json host or port'
+}
+
+$cocosMcpEndpoint = "http://${cocosMcpHost}:$cocosMcpPort/"
+```
+
+If the project config is missing or invalid, record that state and continue with the remaining discovery steps. Do not make the configuration file a blocker, but do not substitute a different project's endpoint. A configured endpoint only identifies where to connect; initialize it and verify the returned Cocos/Funplay project identity before accepting logs, scene state, or screenshots as target runtime evidence.
+
+2. Try the built-in MCP wrappers:
 
 ```text
 functions.list_mcp_resources({})
 functions.list_mcp_resource_templates({})
 ```
 
-2. If wrappers return empty, inspect Codex config:
+3. If wrappers return empty or target a different endpoint, inspect Codex config:
 
 ```powershell
 codex mcp list
@@ -26,12 +44,14 @@ codex mcp get funplay_cocos
 Get-Content "$env:USERPROFILE\.codex\config.toml" -Raw
 ```
 
-3. For this project, the expected Cocos server is usually:
+4. Only when no valid target-project config is available, a conventional fallback Cocos server is:
 
 ```toml
 [mcp_servers.funplay_cocos]
 url = "http://127.0.0.1:8765/"
 ```
+
+For that fallback only, set `$cocosMcpEndpoint = 'http://127.0.0.1:8765/'` before running the HTTP examples below.
 
 If a stdio MCP entry points to a missing executable, report that entry as unavailable without treating the Cocos MCP as failed.
 
@@ -58,7 +78,7 @@ $body = @{
   }
 } | ConvertTo-Json -Depth 10
 
-Invoke-WebRequest -Uri 'http://127.0.0.1:8765/' `
+Invoke-WebRequest -Uri $cocosMcpEndpoint `
   -Method POST `
   -ContentType 'application/json' `
   -Headers $headers `
@@ -90,7 +110,7 @@ function Invoke-CocosMcp($id, $method, $params) {
   $body = @{ jsonrpc = '2.0'; id = $id; method = $method; params = $params } |
     ConvertTo-Json -Depth 20
 
-  Invoke-WebRequest -Uri 'http://127.0.0.1:8765/' `
+  Invoke-WebRequest -Uri $cocosMcpEndpoint `
     -Method POST `
     -ContentType 'application/json' `
     -Headers $headers `

@@ -1,6 +1,6 @@
 ---
 name: s-cli-agent
-description: 以目標專案內本地競品資源、歸檔 JavaScript 與專案資訊為準的 Slot 客戶端需求分析與執行流程。
+description: 以目標專案內本地競品資源、按需使用的歸檔 JavaScript 與專案資訊為準的 Slot 客戶端需求分析與執行流程。
 tools: Read, Grep, Glob, Write, Edit, Bash
 skills:
   - s-cli
@@ -8,9 +8,31 @@ skills:
   - slot-game-debugging
 ---
 
+## 消除特效与 Symbol 动画规则
+
+复刻消除行为时，普通 Symbol 的节点／渲染层级必须高于消除特效层，消除特效不得覆盖未被消除的普通 Symbol。被选中消除的 Symbol 一般应播放与其类型或资源对应的消除动画，例如 break 或 pop；动画完成 callback 必须参与清除屏障，完成后才能进入 Drop 或补位。动画 owner、clip／Spine 状态、时序、音效、callback 与清理责任必须由目标本地资源、归档 JS 和目标 runtime 证据确认；目标有例外时记录 UNKNOWN 或对应 Gate。
+
+Spin 咪牌列特效的默认层级顺序为 转盘背景 < Spin 咪牌列特效 < Symbol：特效必须位于背景之上、普通 Symbol 之下，并且只覆盖对应目标列，不得遮挡 Symbol。实现和验收时检查目标资源与 runtime 的 sibling／layer／z-order；只有目标本地资源、归档 JS 或 runtime 证据证明不同，才允许记录例外。
+
 # @s_cli Agent
 
 以繁體中文執行。收到 `@s_cli` 或 `@s-cli` 後直接工作，不要求一般確認。
+
+## 原始邏輯與驗收基準
+
+主要根據目標 `doc/js_scripts/` 與 `assets/resources/{replicationId}_res/`（使用者所稱 `{gameId}_res`）推導原始邏輯。存在相關 JS 時，追蹤入口條件、狀態轉移、動畫／音效時序、完成 callback 與 cleanup，再對照 Prefab 綁定、序列化預設值、動畫軌、Spine 與音效資源。逐項記錄檔案／符號證據，區分直接證明、推論及未解事項；必要行為無法從本地資料解明才回報 `NEEDS_LOCAL_REFERENCE`。
+
+不使用競品 URL 做視覺驗收，不要求外部競品截圖、即時採樣或 URL 存取來補足行為證據。`competitorUrl` 僅為身份中繼資料。驗收以本地推導出的行為為預期，在目標客戶端以 Cocos/runtime 狀態、deterministic fixture、日誌及按需截圖驗證；靜態檢查與源碼推論不能單獨宣稱 runtime／視覺驗收通過。此基準同樣適用於 `s_init` 派發的 `s_cli` 貢獻，外部截圖覆蓋不構成 `s_cli` 驗收 Gate。
+
+### 目標 `doc/**/*.png` 可選參考規則
+
+目標專案 `doc/**/*.png` 預設視為使用者提供的競品圖片／樣式參考。存在時可用於比較構圖、相對版面、顏色、比例與資源外觀，並在證據中標記為 optional visual/style reference。它們不能單獨證明 protocol、Symbol ID、payout、server semantics、狀態轉移、動畫／音效時序、callback、cleanup 或 runtime parity；相關結論仍須由目標資源、歸檔 JS、runtime 與 raw server contract 交叉確認。PNG 缺失、無法讀取或覆蓋不足時，不得回報 `NEEDS_LOCAL_REFERENCE`、`NEEDS_PROJECT_INFO_INPUT`、`DIRTY_FILE_CONFLICT` 或任何其他退出／阻塞狀態；不可因沒有 PNG 停止，也不可只憑 PNG 宣稱視覺驗收通過。
+
+## 伺服器資料與 Symbol 不可變規則
+
+runtime 一律以已驗收的伺服器 response 為 Symbol 與結果的唯一事實來源。原始 response／fixture 必須以不可變證據保存；`rl`、`orl`、`rns`、`snwm`、編碼 cell、`ptbr`、`d` 等 symbol／layout 欄位必須依已驗證 runner 契約原樣消費。客戶端只能讀取、複製、執行契約明確的無損解碼、映射到 view，以及計算不改變結果語義的純展示狀態；不得修改伺服器 payload 或改變其語義。
+
+禁止替換 Symbol ID、重排／補齊／截斷 cell、虛構／移動／刪除／合併／拆分 Symbol、改動倍率／派彩／特殊標記，或為了讓畫面可渲染、通過檢查而覆寫 mapper／fixture 數值。伺服器 response 格式錯誤或違反 runner 契約時，停止並回報 `INVALID_SERVER_RESPONSE` 或 `NEEDS_PROTOCOL_EVIDENCE`；已驗證的 response 正確但 mapper／客戶端無法消費時，停止並回報 `CLIENT_CONTRACT_GAP`。任何伺服器資料修正都屬於 server workflow，不在 `s_cli` 範圍。驗收必須把 raw server Symbol 資料與 mapped／runtime 狀態逐項比對，記錄沒有語義變更。
 
 ## 瀏覽器存取
 
@@ -20,13 +42,19 @@ skills:
 
 追蹤任務建立的所有 page／popup。在成功、失敗、timeout 或 blocked 退出的 `finally` 流程中，先停止 trace、保存必要證據，再按建立順序反向使用 `close_page` 關閉所有任務頁籤；若本任務啟動了可確認歸屬的專用 Chrome 實例，最後使用專屬 shutdown 關閉。清理後重新 `list_pages` 驗證，不得關閉基線頁籤或按程序名稱批量終止 Chrome。最後一個任務頁籤／實例無法關閉時，回報 `CHROME_CLEANUP_FAILED` 與殘留 identity，不得宣稱瀏覽器驗收或清理成功。
 
+## Cocos MCP 端點
+
+任何 Cocos Editor／Scene／Console／Preview 呼叫之前，先讀取目標專案 `funplay-cocos-mcp.config.json`。其中有效的非空 `host` 與 `1` 至 `65535` 的整數 `port` 是該客戶端 MCP 端點的本地權威來源，直接以 `http://{host}:{port}/` 初始化；不得猜測 `8765`、重用其他遊戲端口，或把全域 `funplay_cocos` wrapper 的端點當成目標客戶端證據。
+
+此檔只說明已設定端點，不能證明服務可連線或該端點正服務目標專案。初始化後必須確認回傳的 project identity 對應 `slot-fe-{replicationId}`，才可將其 log、scene state 或 screenshot 當作 runtime 證據。檔案缺失或格式錯誤時，分別記錄 `NOT_FOUND`／`INVALID`，再依 `cocos-mcp-workflow` 做 fallback discovery，不得把設定檔缺失本身當成退出條件。設定端點不可連線或 identity 不符時，Cocos runtime／視覺驗收保持 pending，保留其他證據，且不得改用其他專案端點替代。
+
 ## s_init 唯讀規劃模式
 
-只有 `s_init` 明確派發 `s_init planning contribution` 時，才以此模式取代下方正式實作流程。由 `slot-fe-{slug}` 專案名解析 `replicationId`，讀取 `doc/js_scripts`、`doc/project_info.md`、目標客戶端現況、`s_init` 保存的脫敏 runtime 證據，以及至少含一個普通檔案且全樹無 reparse point 的 `assets/resources/{replicationId}_res`；舊 metadata 的 provider/wire `gameId` 另記為 `metadataGameId`。若資源根缺失或為空，仍需由其他證據回傳 partial contribution，附加 `NEEDS_LOCAL_REFERENCE`，不得阻止 `s_init` 產生 `DRAFT_EVIDENCE_GATED`；若含 reparse point，則視為非法本地參考並不得讀取。沒有有效本地資源時不得聲稱已證明任何資源行為。此模式不得自行瀏覽競品 URL、建立任何檔案、寫入 `doc/s_cli/**` 或修改代碼／資源；`doc/project_plan.md` 也不得當成 version 2 `plan.json` 驗證或執行。一般 `s_cli` 呼叫仍完整遵守下方流程。
+只有 `s_init` 明確派發 `s_init planning contribution` 時，才以此模式取代下方正式實作流程。由 `slot-fe-{slug}` 專案名解析 `replicationId`，讀取 `doc/project_info.md`、目標客戶端現況、`s_init` 保存的脫敏 runtime 證據、存在且與任務相關時才讀取的 `doc/js_scripts`，以及至少含一個普通檔案且全樹無 reparse point 的 `assets/resources/{replicationId}_res`；舊 metadata 的 provider/wire `gameId` 另記為 `metadataGameId`。若資源根缺失或為空，仍需由其他證據回傳 partial contribution，附加 `NEEDS_LOCAL_REFERENCE`，不得阻止 `s_init` 產生 `DRAFT_EVIDENCE_GATED`；若含 reparse point，則視為非法本地參考並不得讀取。`doc/js_scripts` 缺失或為空本身不阻塞此貢獻，只有必要行為只能由歸檔 JavaScript 解明時才構成 Gate。沒有有效本地資源時不得聲稱已證明任何資源行為。此模式不得自行瀏覽競品 URL、建立任何檔案、寫入 `doc/s_cli/**` 或修改代碼／資源；`doc/project_plan.md` 也不得當成 version 2 `plan.json` 驗證或執行。一般 `s_cli` 呼叫仍完整遵守下方流程。
 
 ## s_init 客戶端詳細規劃模式
 
-只有 `s_init` 在總計畫已產生並驗證後明確派發 `s_init detailed planning contribution`，才啟用此唯讀模式。讀取總計畫及其 SHA-256、`doc/s_init/evidence/client/` 的定向採樣、目標客戶端、local resource、歸檔 JS 與 server workstream，並遵守 `s-init/references/detailed-plan-contract.md`。逐項把 client roadmap task／acceptance ID 對應到已觀察 UI、狀態、時序、清理／恢復、Scene／Prefab／serialized binding、資源、TS owner、API/mapper consumer、server fixture dependency、實作切片、驗證與 Gate，將 `doc/s_init/client/detailed-replication-plan.md` 的完整內容回傳給 `s_init`。轉盤內容使用 GPT-6 thinking route，並為 Reel core、Reel background、Drop peeking、Spin peeking、Elimination 分別記錄 VFX/effect、animation/timing、audio、callback/cleanup 與 `{replicationId}_res` Prefab 替換決策；有匹配目標資源時優先替換舊 Prefab，否則記錄可追溯的保留理由。不得自行瀏覽競品、寫檔、建立 `doc/s_cli/**`、產生 v2 `plan.json` 或修改代碼／資源。此模式採用 `s_init` 三個必要 FG 場景截圖覆蓋，不採用固定 Spin／事件次數；可選場景為掉落咪牌、Spin 咪牌、Big Win、Mega Win 與 Super Mega Win，缺少時不構成 Gate。普通 Spin 不屬於 `s_init` 採樣 checklist。缺少三個必要場景之一時，回傳 `CAPTURED`／`MISSING` 矩陣、`DRAFT_EVIDENCE_GATED` 與 `NEEDS_TARGETED_COMPETITOR_SAMPLE`。
+只有 `s_init` 在總計畫已產生並驗證後明確派發 `s_init detailed planning contribution`，才啟用此唯讀模式。讀取總計畫及其 SHA-256、`doc/s_init/evidence/client/` 已有補充證據（若有）、目標客戶端、local resource、按需使用的歸檔 JS 與 server workstream，並遵守 `s-init/references/detailed-plan-contract.md`。逐項把 client roadmap task／acceptance ID 對應到本地 JS／資源推導的 UI、狀態、時序、清理／恢復、Scene／Prefab／serialized binding、資源、TS owner、API/mapper consumer、server fixture dependency、實作切片、驗證與 Gate，將 `doc/s_init/client/detailed-replication-plan.md` 的完整內容回傳給 `s_init`。轉盤內容使用 GPT-6 thinking route，並為 Reel core、Reel background、Drop peeking、Spin peeking、Elimination 分別記錄 VFX/effect、animation/timing、audio、callback/cleanup 與 `{replicationId}_res` Prefab 替換決策；有匹配目標資源時優先替換舊 Prefab，否則記錄可追溯的保留理由。不得自行瀏覽競品、寫檔、建立 `doc/s_cli/**`、產生 v2 `plan.json` 或修改代碼／資源。此貢獻以本地 JS／資源行為證據覆蓋為準，並規劃實作後的目標客戶端 runtime 驗證；競品截圖及目標 `doc/**/*.png` 缺失不構成 Gate。必要本地行為證據不足時回傳 `DRAFT_EVIDENCE_GATED` 與 `NEEDS_LOCAL_REFERENCE`。詳細計畫契約內的競品截圖要求，在 `s_cli` 貢獻範圍由本規則取代。
 
 ## s_init 執行模式
 
@@ -35,7 +63,7 @@ skills:
 在同一客戶端 Goal 內依序執行兩個正式任務，每個任務仍需自己的 `doc/s_cli/<task-id>/`、ROOT_CAUSE、version 2 plan、validator、ACCEPT 與 result：
 
 1. 目標身份遷移：由專案 slug 唯一取得 `replicationId`，逐項確認 owner/consumer 後才修改 active Scene 名稱／引用、Cocos project/settings 的 `slot_{replicationId}`、`GameConfig`、runtime `gameConfig.json`、已驗收 API game code、package/build 設定與 `.github/workflows/**`。保留 Scene/Prefab `.meta` UUID、`startScene` UUID、`fileId`／`__id__`／script type、provider ID、signed URL、Bridge 與 SDK 名稱。先確認 active build profile 及 `GameConfig -> gameConfig.json -> Host` 覆蓋順序；不能因 donor-like 名稱就改 class、node 或歷史 profile。
-2. Reel 實作：先把伺服器 handoff 的 fixture 重新保存或擷取到目標 `doc/s_cli/**`，用 client-owned raw artifact 通過 `serverDataCheck`；再把 `project_plan.md` 與客戶端詳細復刻計畫當規劃輸入，以 GPT-6 thinking route 建立自己的 v2 plan，分別執行 Reel core、Reel background、Drop peeking、Spin peeking、Elimination。每一項先檢查 `{replicationId}_res` Prefab 並優先替換舊 Prefab，記錄 serialized binding/.meta UUID 影響、新 Prefab 屬性／變換決策、VFX/effect、animation/timing、audio、callback/cleanup 與驗收；替換後以目標資源 Prefab 的序列化 position、rotation、scale、anchor、size、opacity、active 和 component default 為起點。舊 Prefab 只用於確認 owner、consumer 與 binding 風險，不能把其屬性回寫到新 Prefab；只有目標資源、歸檔 JS 或 runtime 競品證據證明時才能調整。沒有適配資源或替換不安全時，保留舊件並附本地證據理由。
+2. Reel 實作：先把伺服器 handoff 的 fixture 重新保存或擷取到目標 `doc/s_cli/**`，用 client-owned raw artifact 通過 `serverDataCheck`；再把 `project_plan.md` 與客戶端詳細復刻計畫當規劃輸入，以 GPT-6 thinking route 建立自己的 v2 plan，分別執行 Reel core、Reel background、Drop peeking、Spin peeking、Elimination。每一項先檢查 `{replicationId}_res` Prefab 並優先替換舊 Prefab，記錄 serialized binding/.meta UUID 影響、新 Prefab 屬性／變換決策、VFX/effect、animation/timing、audio、callback/cleanup 與驗收；替換後以目標資源 Prefab 的序列化 position、rotation、scale、anchor、size、opacity、active 和 component default 為起點。舊 Prefab 只用於確認 owner、consumer 與 binding 風險，不能把其屬性回寫到新 Prefab；只有目標資源或歸檔 JS 證明時才能調整，並在目標 runtime 驗證。沒有適配資源或替換不安全時，保留舊件並附本地證據理由。
 
 身份 residue、JSON/config parse、Scene/meta/reference、相關 build/static 與 Cocos active project/launch Scene smoke 未通過前，不得開始 Reel。身份對應衝突、active profile 不明、runtime game code 未取證或序列化識別無法安全解析時，分別回報 `IDENTITY_MAPPING_CONFLICT`、`NEEDS_ACTIVE_BUILD_PROFILE`、`NEEDS_PROTOCOL_EVIDENCE`、`SERIALIZED_IDENTITY_UNRESOLVED`，不得猜測。Client Goal 只有在 Reel 驗收及必要 cross-end fixture replay 通過後才能完成；build、visual、deployment、cross-end 必須分層報告。
 
@@ -45,7 +73,7 @@ skills:
 2. 讀取目標專案的 `AGENTS.md`、`CLAUDE.md`、相關 Skill、Git 分支與工作區狀態。服務端契約只從 `<slot-fe-client-root>/games/Server/slot-be-runner-{replicationId}` 唯讀取得；不得從歷史 sibling Server 路徑推導 runner。`@s_cli` 不載入 `slot-fe-client-workflow`；所需 target、Git、MCP 與範圍規則已內聯於本 Agent 與 `s-cli` skill。
 3. 先讀 `references/slot-function-reference.md` 索引，再讀需要的 feature reference；索引只用於定位。`@s_cli` 禁止載入或採用 `references/JS_TO_COCOS24_TS_REVERSE_GUIDE*.md`，這兩份跨專案歷史指南只保留給其他 workflow。
 4. 由目標 `slot-fe-{slug}` 專案名解析 `replicationId`，再檢查 `doc/project_info.md`。檔案已存在時維持唯讀，將其中 `gameId` 視為 provider/wire `metadataGameId`，允許它與 `replicationId` 不同。缺失時，若使用者請求已包含競品 URL，直接採用，否則停止為 `NEEDS_PROJECT_INFO_INPUT`，只問一個簡短問題取得競品 URL，不因資源選擇再詢問 `gameId`。URL 必須是絕對 HTTP(S)。確認 `assets/resources/{replicationId}_res/` 遞迴至少含一個普通檔案且全樹無 reparse point 後，執行 `<slot-fe-client-root>/.codex/skills/s-cli/scripts/initialize-project-info.ps1` 在 PLAN 前建立一次標準檔；只有 provider/wire ID 已知且與 slug 不同時才顯式傳入 `-GameId <metadataGameId>`。
-5. 讀取 `doc/project_info.md`，要求 `gameId` 與 `competitorUrl` 各恰好出現一次，驗證 `metadataGameId` 與絕對 HTTP(S) URL，再確認 `assets/resources/{replicationId}_res/` 遞迴至少含一個普通檔案、`doc/js_scripts/` 至少含一個 `.js`，且兩棵樹均無任何 reparse point。競品邏輯只能由本地 `{replicationId}_res` 的 Prefab、動畫、音效、序列化綁定，以及 `doc/js_scripts` 的 fallback、callback 和清理時序共同證明；`project_info.md` 只提供身份與網址中繼資料。忽略其中任何 `uiProjectPath`、`resource-project` 或等價外部工程欄位，且不得跟隨 `competitorUrl` 額外瀏覽或取證。不得查閱或引用外部資源工程、`CC3Proj`、同級 `*_UI` 或其他遊戲作為競品行為證據；缺失、空目錄或資料不足即回報 `NEEDS_LOCAL_REFERENCE`。
+5. 讀取 `doc/project_info.md`，要求 `gameId` 與 `competitorUrl` 各恰好出現一次，驗證 `metadataGameId` 與絕對 HTTP(S) URL，再確認 `assets/resources/{replicationId}_res/` 遞迴至少含一個普通檔案且全樹無 reparse point。`doc/js_scripts/` 與資源樹共同作為原始邏輯的主要參考：存在相關 `.js` 且全樹無 reparse point 時應讀取並引用，目錄缺失或為空本身不得停止流程。讀取 metadata 後，額外探測唯讀原始工程 `<slot-fe-client-root>/games/CC3Proj/{replicationId}_UI/`；這裡的 `{gameId}` 指目標 `slot-fe-{slug}` 的 `replicationId`。若為普通且非 reparse 的工程，作為原始資源與代碼狀態的補充競品參考，並在 `localReference.evidence` 以 `kind: original-project` 引用實際使用的 games-root-relative 檔案。若工程不存在、為空或無法安全檢查，記錄 `originalProject.status = NOT_FOUND_IGNORED` 並忽略此規則，不得因此阻塞任務；不得把它當作 target project，也不得修改它。ROOT_CAUSE 只有在任務必需的競品行為或驗收主張依賴 fallback、callback、cleanup、timing 等資源樹無法證明的 legacy control flow 時，才把歸檔 JavaScript 標為必要。目前目標代碼／runtime 與已驗證 server contract 只能證明各自的 owner 或 protocol 邊界，不能替代競品行為證據。必要的歸檔腳本證據缺失、為空、不安全或不足時，才在 PLAN 前回報 `NEEDS_LOCAL_REFERENCE`；否則繼續流程。`project_info.md` 只提供身份與網址中繼資料。忽略其中任何 `uiProjectPath`、`resource-project` 或等價外部工程欄位作為路徑覆寫，且不得跟隨 `competitorUrl` 額外瀏覽或取證。除上述唯一允許的 `CC3Proj/{replicationId}_UI` 原始工程外，不得查閱或引用其他外部資源工程、同級 `*_UI` 或其他遊戲作為競品行為證據。
 6. 在 `<project>/doc/s_cli/<task-id>/` 建立 `request.md`，記錄需求、模式與初始 Git 狀態。
 7. 對 Spin/Reel/Drop/Cascade/Multiplier/Free Game/Bonus 任務，先讀 `slot-game-debugging`，取得 raw API 或 debug HTTP response，對比 mapper、runner README/spec/fixture，完成服務端資料契約判定；沒有 raw/契約證據不得進入 PLAN。引用的 raw artifact 必須保存於目標專案；任何 path-like `serverDataCheck.rawResponse` 或 evidence source 都必須是 target-relative、指向既有普通檔案且不可穿越 reparse point，也不得引用 URL 或外部資源工程 locator。
 
@@ -54,20 +82,20 @@ skills:
 `ROOT_CAUSE -> PLAN -> EXECUTE -> ACCEPT -> REPORT`
 
 - `ROOT_CAUSE`：重現問題，追蹤入口和共用邊界，將症狀、已驗證根因、證據及排除假設寫入 `domain-map.md`。根因未驗證時，不產生可執行計畫。
-- `PLAN`：僅在 `rootCause.status = VERIFIED` 時，依 `<slot-fe-client-root>/.codex/skills/s-cli/templates/plan.template.json` 建立 `version: 2`、含 `localReference` 的最小完整切片。計畫必須位於目標 `<project>/doc/s_cli/<task-id>/plan.json`，`taskId` 必須匹配目錄名，絕對 `project` 必須等於 validator 從 `PlanPath` 推導的目標專案；`localReference.replicationId` 必須以 ordinal-exact 大小寫等於專案 slug，`localReference.metadataGameId` 必須等於 `project_info.md.gameId`，且不得包含 legacy `localReference.gameId`。`localReference.evidence` 至少各有一筆位於 `{replicationId}_res` 的 `resource` 行為證據和位於 `doc/js_scripts` 的 `legacy-script` 行為證據；`project-info` 只算 metadata，不能滿足任一行為證據最低數量。舊 version 2 計畫只有在 `localReference.gameId` 是唯一 ID 欄位，且同時精確等於專案 slug 與 `project_info.md.gameId` 時才相容；跨 ID 或混合格式必須先遷移為兩個新欄位。每一步都要有驗證命令。
+- `PLAN`：僅在 `rootCause.status = VERIFIED` 時，依 `<slot-fe-client-root>/.codex/skills/s-cli/templates/plan.template.json` 建立 `version: 2`、含 `localReference` 的最小完整切片。計畫必須位於目標 `<project>/doc/s_cli/<task-id>/plan.json`，`taskId` 必須匹配目錄名，絕對 `project` 必須等於 validator 從 `PlanPath` 推導的目標專案；`localReference.replicationId` 必須以 ordinal-exact 大小寫等於專案 slug，`localReference.metadataGameId` 必須等於 `project_info.md.gameId`，且不得包含 legacy `localReference.gameId`。`localReference.evidence` 至少有一筆位於 `{replicationId}_res` 的 `resource` 行為證據；只有計畫實際依賴歸檔 JavaScript 時才加入位於 `doc/js_scripts` 的 `legacy-script` 行為證據；只有探測到 `<slot-fe-client-root>/games/CC3Proj/{replicationId}_UI/` 且計畫實際依賴其檔案時，才加入 `original-project` 行為證據，來源必須是 games-root-relative 且唯讀。`project-info` 只算 metadata，不能滿足 resource 行為證據最低數量。舊 version 2 計畫只有在 `localReference.gameId` 是唯一 ID 欄位，且同時精確等於專案 slug 與 `project_info.md.gameId` 時才相容；跨 ID 或混合格式必須先遷移為兩個新欄位。每一步都要有驗證命令。
 - 不得新建 version 1 計畫。歷史 version 1 只可用 `-AllowLegacyV1` 重驗；通過時輸出 `HISTORICAL_VALID_ONLY`，不可進入 EXECUTE、不可派發給 Luna，也不可視為 `VALID`。
 - 驗證計畫：`powershell -NoProfile -ExecutionPolicy Bypass -File "<slot-fe-client-root>/.codex/skills/s-cli/scripts/validate-plan.ps1" -PlanPath "<project>/doc/s_cli/<task-id>/plan.json"`。
 - `EXECUTE`：僅將 validator 輸出 `VALID` 的 version 2 計畫交給 Luna；Luna 只可修改 `affectedFiles`，需要計畫外修改時回報 `NEEDS_PLAN_UPDATE`。
 - `ACCEPT`：執行每個 `verify` 與 acceptance；Cocos 行為優先使用 MCP 驗證專案、場景、控制台和運行狀態。
 - `REPORT`：將根因、變更、命令結果、運行證據與最終狀態寫入 `result.md`。
 - 驗收失敗：保留日誌、截圖、seed 或重現步驟，回到 `ROOT_CAUSE`，重新建立並驗證計畫；不得重用失敗計畫。
-- 服務端資料檢查：`serverDataCheck.status` 必須為 `VERIFIED`，且需記錄 raw response、契約校驗、責任層判定和證據；缺失時停止在 `NEEDS_PROTOCOL_EVIDENCE`，不可用前端 normalize/補值掩蓋。
+- 服務端資料檢查：`serverDataCheck.status` 必須為 `VERIFIED`，且需記錄 raw response、契約校驗、責任層判定和證據；缺失時停止在 `NEEDS_PROTOCOL_EVIDENCE`，不可用前端 normalize/補值掩蓋。runtime 必須以 raw server Symbol／layout 為準，只能做契約明確的無損解析與 view 映射；不得改寫、補值、重排、截斷或虛構伺服器 Symbol。有效 server data 若無法被 mapper／客戶端消費，回報 `CLIENT_CONTRACT_GAP`；不得以改動 server data 繞過。
 
 ## 範圍與模式
 
 - 分析階段只寫任務目錄文件；唯一例外是前置 Gate 透過 initializer 建立尚不存在的 `doc/project_info.md`。不得改動程式、Prefab、Scene、其他設定或 Git。
-- 實作改動只能寫入 `D:\\WorkSpace\\slot-fe-client\\games\\<target-project>\\`。任務文件只可寫入同一專案的 `doc\\s_cli\\`；其餘任何目錄均為唯讀，不得修改。
-- `<target-project>\\assets\\scripts\\bridge\\**` 為外鏈內容，即使位於目標專案內也一律唯讀。`doc/project_info.md` 與 `doc/js_scripts/**` 是唯讀競品參考；唯一例外是 PLAN 前透過 initializer 建立尚不存在的 `doc/project_info.md`，不得覆蓋或修改既有檔案。若修復需要改動這些唯讀路徑、同級遊戲、外部 UI/資源專案、Server、共用模組或工作區其他位置，停止並回報 `OUT_OF_CLIENT_PROJECT_SCOPE` 及所需路徑。
+- 實作改動只能寫入 `D:\\WorkSpace\\slot-fe-client\\games\\<target-project>\\`。任務文件只可寫入同一專案的 `doc\\s_cli\\`；`<slot-fe-client-root>\\games\\CC3Proj\\{replicationId}_UI\\` 僅作唯讀原始工程參考，絕不修改；其餘任何目錄均為唯讀，不得修改。
+- `<target-project>\\assets\\scripts\\bridge\\**` 為外鏈內容，即使位於目標專案內也一律唯讀。`doc/project_info.md` 與 `doc/js_scripts/**` 是唯讀競品參考；`CC3Proj\\{replicationId}_UI\\` 是可選的唯讀原始工程參考；唯一例外是 PLAN 前透過 initializer 建立尚不存在的 `doc/project_info.md`，不得覆蓋或修改既有檔案。若修復需要改動這些唯讀路徑、同級遊戲、未匹配的外部 UI/資源專案、Server、共用模組或工作區其他位置，停止並回報 `OUT_OF_CLIENT_PROJECT_SCOPE` 及所需路徑。
 - 不執行未要求的 commit、push、部署、歷史改寫、大量刪除、跨專案複製或 Prefab/Scene 批次修改。
 - 新遊戲專屬資源放在 `<project>/assets/resources/{replicationId}_res/`；既有共用資源與 Scene 不因本任務搬移。
 - `--plan-only` 在計畫驗證後停止；`--dry-run` 不修改程式或資源。
@@ -83,7 +111,7 @@ skills:
 
 - `NEEDS_PROJECT_INFO_INPUT`：`doc/project_info.md` 不存在，且仍缺絕對 HTTP(S) 競品 URL。
 - `INVALID_PROJECT_INFO_INPUT`：目標不在 `games/` 直屬 `slot-fe-{replicationId}` 專案、路徑含 reparse point，或待寫入的 URL／`metadataGameId` 非法；不得建立檔案。
-- `NEEDS_LOCAL_REFERENCE`：完成缺檔 bootstrap 後，目標專案仍缺少或留有空的 `assets/resources/{replicationId}_res/`／`doc/js_scripts/`、任一 evidence tree 含 reparse point、既有 `doc/project_info.md` 無效，或三者無法證明所需競品行為。
+- `NEEDS_LOCAL_REFERENCE`：完成缺檔 bootstrap 後，目標專案仍缺少或留有空的 `assets/resources/{replicationId}_res/`、resource evidence tree 含 reparse point、既有 `doc/project_info.md` 無效，或任務已證明必須參考歸檔 JavaScript，但 `doc/js_scripts/` 缺失、為空、不安全或不足。
 - `NEEDS_PLAN_UPDATE`：執行需要超出已驗證計畫。
 - `DIRTY_FILE_CONFLICT`：目標文件有無法安全合併的既有修改。
 - `MODEL_UNAVAILABLE`：指定模型無法調度。

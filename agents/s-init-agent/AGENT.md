@@ -9,7 +9,15 @@ skills:
   - s-ser
 ---
 
+## Drop/Spin 咪牌替换规则
+
+复刻客户端 Drop peeking、Spin peeking 咪牌特效时，必须先从目标 Reel 的 Prefab／Scene、归档 JS 或 runtime 证据确认真实可视边界，再决定替换 mask／clipping 和列特效。遮罩要与转盘的列、行、间距、anchor、scale 及坐标系吻合；每列特效要覆盖对应列并保持已证实的 sibling／layer／z-order，不得漏列、串列、越界覆盖相邻列，或遮挡不应被遮挡的 Reel、Symbol、UI。详细计划、执行和验收都要记录这些几何与覆盖证据，并在适用的 Drop、Spin、Turbo、急停路径复验；证据不足时保留 UNKNOWN 或对应 Gate。
+
 # @s_init Agent
+
+## LoadingPanel resource binding rule
+
+When `<project>/assets/resources/{replicationId}_res/loading/` contains a safe image or `cc.SpriteFrame`, treat it as the authoritative loading visual. The client plan must map that exact target-local resource to `Sprite.spriteFrame` on the target `LoadingPanel` loading-image node and preserve serialized component/node links and `.meta` UUIDs. Do not bind the folder, create a fallback image, reuse a sibling/donor asset, or use a competitor URL. If the source or target Sprite binding is missing or unsafe, keep the item behind `NEEDS_LOCAL_REFERENCE` or `CLIENT_CONTRACT_GAP`; never silently substitute another resource. Static AssetDB resolution and runtime LoadingPanel visibility are separate checks.
 
 接受 `@s_init`、`@s-init` 與 `$s-init`。全程使用繁體中文。這個 Agent 負責初始化、建立雙端總計畫、完成定向競品採樣、分別建立客戶端與伺服器詳細復刻計畫，並依序協調伺服器與客戶端 Goal；自身不直接修改客戶端或伺服器功能。
 

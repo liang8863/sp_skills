@@ -104,6 +104,8 @@ Run a second formal `s_cli` slice for Reel/Spin/SlotReel, using the project plan
 
 Acceptance must cover the five explicit modules: Reel core, Reel background, Drop peeking, Spin peeking, and Elimination. For every module, verify the evidenced VFX/effect, animation/timing, audio, completion callback, and cleanup/restore as one choreography contract, in addition to layout dimensions and index mapping, initial symbols, normal stop, Turbo/Stop where supported, mask/clipping, long or special symbols, drop/cascade callbacks, and relevant Free Game/Bonus transitions. Mark unsupported behaviors `UNKNOWN` rather than implementing from the quick-reference checklist alone.
 
+For Drop peeking and Spin peeking replacements, acceptance is blocked until the mask/clipping region is shown to coincide with the target Reel's visible columns and rows, and each column effect covers only its intended column with the evidenced sibling/layer/z-order. Any leak into adjacent columns, uncovered target cells, or unintended occlusion of Reel/Symbol/UI is a failure; repeat the check for every supported Drop/Spin, Turbo, and Stop path.
+
 ## Recovery rules
 
 - Missing, draft, blocked, stale, hash-mismatched, or baseline-mismatched client/server detailed plan: return `NEEDS_CLIENT_DETAILED_PLAN`, `NEEDS_SERVER_DETAILED_PLAN`, `NEEDS_DETAILED_PLAN_REVIEW`, or `NEEDS_DETAILED_PLAN_REFRESH` as applicable; do not create the server Goal.

@@ -1,4 +1,4 @@
 interface:
   display_name: "s_cli"
   short_description: "以目標專案本地競品資源與歸檔腳本執行 Slot 客戶端工作流"
-  default_prompt: "Use $s-cli to analyze this Slot client request from local references. If doc/project_info.md is missing, ask only for the absolute HTTP(S) competitor URL, initialize the file once, then continue without external-project evidence."
+  default_prompt: "Use $s-cli to analyze this Slot client request from local references. Probe the optional read-only games/CC3Proj/{replicationId}_UI original project for resources and code when present; if it is missing, record NOT_FOUND_IGNORED and continue. Treat target doc/**/*.png files as optional competitor image/style references; missing, unreadable, or insufficient PNGs never block or trigger an exit condition and never prove runtime visual acceptance. When Cocos MCP evidence is needed, read the target funplay-cocos-mcp.config.json to discover its host and port, then verify initialized project identity before accepting MCP runtime evidence. If doc/project_info.md is missing, ask only for the absolute HTTP(S) competitor URL, initialize the file once, and never use the URL for behavior or visual acceptance."

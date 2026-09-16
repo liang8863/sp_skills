@@ -61,11 +61,13 @@ Resolve the canonical server root as `<slot-fe-client-root>/games/Server`. Use `
 
 ## Scheme discovery and conditional structure gate
 
+For mathematical or field-semantics work, read `<slot-fe-client-root>/.codex/skills/s-ser/references/rtp-math-evidence.md`. Search by `GAME_CODE` and Chinese game name for the game document, applicable basic rules and workbook entries; read Office contents locally before declaring a field undefined. Map the documented meaning to its actual parser, selection/RNG call site and boundary assertion. Parsed-only fields do not count as implemented configuration.
+
 Discover scheme evidence before CONTRACT, IMPLEMENT, acceptance, or dev/stg delivery, but do not require a runner-local `scheme.json` to run the task. Derive `GAME_CODE` from proven runner registration/identity; never use a sibling game's JSON to fill a missing reference.
 
 Run `<slot-fe-client-root>/.codex/skills/s-ser/scripts/validate-scheme-structure.ps1`. It must first require `slot-rtp-scheme` to be a clean attached worktree tracking `origin`, then perform a controlled pull as `git fetch --prune origin` plus a fast-forward-only upstream update. This pull is the repository's only permitted mutation: never create, edit, format, rename, delete, copy, stage, commit, push, stash, switch, rebase, reset, or create a merge commit there. A dirty repository, unsafe branch/upstream state, local-ahead/diverged history, sync failure, or post-sync dirtiness returns `NEEDS_SCHEME_SYNC_DECISION`; stop only scheme-dependent work and continue the rest of the task.
 
-Only after synchronization, locate the exact reference and record remote/branch/upstream, before/after commits, ahead/behind counts, post-sync dirty state, the selected reference path/SHA-256, the local path/SHA-256 when present, and the structured result under the normal evidence root. Never create or substitute a reference document. An absent reference returns `NEEDS_SCHEME_REFERENCE_DECISION`; an ambiguous or unreadable reference returns `NEEDS_SCHEME_REFERENCE`.
+Use the edition already selected by the user or accepted task contract; default to Trial only when none was selected. Pass `-ReferenceEdition Formal` for an already authorized Formal reference; a missing Trial file does not reopen that decision. Only after synchronization, locate the exact reference and record remote/branch/upstream, before/after commits, ahead/behind counts, post-sync dirty state, the selected reference path/SHA-256, the local path/SHA-256 when present, and the structured result under the normal evidence root. Never create or substitute a reference document. An absent reference returns `NEEDS_SCHEME_REFERENCE_DECISION`; an ambiguous or unreadable reference returns `NEEDS_SCHEME_REFERENCE`.
 
 When `<runner>/scheme.json` exists, compare it recursively with the reference: property names, nesting, object/array kinds, array lengths/per-index structures, and scalar JSON kinds must match; key order and scalar values may differ. When the local file is absent, automatically use the uniquely matched, valid reference as the scheme source and accept `VALID` with `validationMode: REFERENCE_FALLBACK`, `runnerSchemePresent: false`, and `structureCompared: false`; do not create or copy a local file. This check proves format availability only, not RTP, weights, or game semantics.
 
@@ -74,6 +76,10 @@ Never return `NEEDS_SCHEME_FILE` merely because `<runner>/scheme.json` is absent
 Read `<slot-fe-client-root>/.codex/agents/s-cli-agent/references/slot-function-reference.md` before planning. This is the same function lookup table used by `@s_cli`.
 
 Use it only to map a server change to affected client boundaries: API/mapper, GameService transaction lifecycle, reel/layout, cascade/drop, multiplier, Free Game/Bonus, Big Win/Total Win, controls, and resources. It is not evidence for game rules, symbol meanings, response fields, thresholds, timing, math, or UI behavior. Derive those from the current game's artifacts.
+
+## Symbol 特殊屬性編碼規則
+
+伺服器輸出的 Symbol 若有長格、倍率或其他特殊屬性，必須在伺服器約定的 encoded cell／symbol value 中明確編碼，讓 response 自帶完整語義；不得要求客戶端從畫面、位置或缺失欄位猜測或自行補寫。若目標遊戲已由規格、runner、mapper 與 round-trip 測試證明採用十進制位段，可由低位向高位配置：個位與十位為基礎 Symbol ID，百位為長格／占格數，千位為倍率，更高位依實際已證明的特殊屬性延伸；在此契約下 `3201` 表示倍率 `3`、占 `2` 格、基礎 Symbol `01`。`3201` 只是示例，不得套用到所有遊戲；必須記錄該遊戲的位段、預設值、續格標記、合法範圍與衝突處理，並以 encode/decode round-trip 和 deterministic fixture 驗證。
 
 ## Resource-engine protocol gate
 
@@ -102,7 +108,7 @@ Starting, restarting, or validating a local runner must preserve all server inst
 
 ### 1. EVIDENCE
 
-1. Read repository instructions, Git state, the target server `README.md`, design/spec documents, settings and any local scheme file, the corresponding `slot-rtp-scheme/试玩版json` reference, and existing tests before changing code. Run scheme discovery/conditional structure validation and preserve its result without blocking unrelated work for a missing local file.
+1. Read repository instructions, Git state, the target server `README.md`, design/spec documents, settings and any local scheme file, the selected-edition `slot-rtp-scheme` JSON and matching mathematical documents, and existing tests before changing code. Run scheme discovery/conditional structure validation and preserve its result without blocking unrelated work for a missing local file.
 2. Outside the explicit `s_init` modes, locate and read the corresponding resource project's `doc/project_info.md` and relevant reports before interpreting protocol fields. In `s_init execution` mode, use the target client's local `{replicationId}_res`, archived JS, saved runtime evidence, and current consumers instead. Trace the current game's client/resource consumers and serialized bindings, and record the path and baseline used.
 3. Build an evidence table with source, observed fact, confidence, target contract, and unresolved items. Prefer evidence in this order: signed game specification or provider documentation, recorded competitor runtime response/capture, current-game client/resource behavior, then a sibling runner only for architecture patterns.
 4. Inspect the current client mapper as a compatibility boundary. A copied or legacy mapper cannot prove a new server layout or custom-field contract.
@@ -147,7 +153,7 @@ Add focused tests for every altered rule. At minimum, test the applicable bounda
 - Free/bonus trigger, restore, retrigger, buy entry, exit, and state reset.
 - Max-win terminal frame, cap amount, award emission, and final snapshot.
 - Response field serialization and client-facing projection.
-- When local `scheme.json` exists, its recursive structure against the uniquely matched trial-version JSON, with both hashes and the reference repository baseline recorded; otherwise, the validated reference fallback path/hash and `structureCompared: false`.
+- When local `scheme.json` exists, its recursive structure against the uniquely matched selected-edition JSON, with both hashes and the reference repository baseline recorded; otherwise, the validated reference fallback path/hash and `structureCompared: false`.
 
 Run the local equivalents of:
 
@@ -197,4 +203,4 @@ For a non-reproducible case, record the search command, tested range, current re
 
 ### 6. REPORT
 
-Report changed files, verified behavior, executed commands, test results, saved fixture locations, the trial-scheme reference/commit/hashes/structure status, and remaining gates. Separate confirmed results from assumptions, runtime blockers, client-contract gaps, and mathematical sign-off requirements.
+Report changed files, verified behavior, executed commands, test results, saved fixture locations, the selected scheme edition/reference/commit/hashes/structure status, mathematical document locations and configuration-consumption evidence, and remaining gates. Separate confirmed results from assumptions, runtime blockers, client-contract gaps, and mathematical sign-off requirements.

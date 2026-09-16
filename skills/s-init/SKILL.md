@@ -57,6 +57,7 @@ Every Chrome MCP session has a mandatory ownership, mute, and cleanup lifecycle:
   - `<project>/doc/js_scripts/`, containing at least one real `.js` file
   - `<project>/doc/project_plan.md`
 - Use `<project>/assets/resources/{replicationId}_res/` as target-local supporting evidence when it contains at least one ordinary file and as the required local-resource handoff for later `s_cli` work. A missing or empty root adds a plan Gate but does not block a JS/runtime-based `DRAFT_EVIDENCE_GATED` plan. Never inspect an external resource project, `CC3Proj`, sibling `*_UI`, or another game as competitor evidence.
+- Treat a safe image or `cc.SpriteFrame` under `<project>/assets/resources/{replicationId}_res/loading/` as the authoritative loading visual when it exists. The client plan and later `s_cli` handoff must bind that resource as `Sprite.spriteFrame` on the target `LoadingPanel` loading-image node, preserving the Cocos node/component shape, serialized `fileId`/`__id__` links, and `.meta` UUID relationships. Do not bind the folder itself, synthesize a replacement image, reuse a sibling/donor asset, or use a competitor URL as the source. If the loading resource or the target `LoadingPanel` Sprite binding is missing or unsafe, record `NEEDS_LOCAL_REFERENCE` or `CLIENT_CONTRACT_GAP` and keep the behavior explicit instead of silently falling back.
 - Put every document, capture, log, plan, and execution artifact created by this coordinated workflow under `<project>/doc/`. In `s_init execution` mode, `s_ser` also writes its task documents and runtime evidence below `<project>/doc/s_init/server/`, not in the runner. `s_cli` keeps its formal task documents below `<project>/doc/s_cli/`.
 - Before implementation starts, the only writes outside the target client's `doc/` are the narrowly authorized Chrome DevTools MCP mute-setting adjustment above and cloning a missing runner to `<slot-fe-client-root>/games/Server/slot-be-runner-{replicationId}`. During the two formal goals, only delegated `s_ser` server/simulator code writes and delegated `s_cli` target-client code writes are allowed.
 
@@ -146,6 +147,10 @@ Select planning contributors according to the evidenced scope. A cross-end repli
 
 The plan is a full-stack roadmap, not an executable `s_cli` version 2 `plan.json` and not a frozen `s_ser` contract. Unknown wire fields must remain semantic placeholders until raw/provider evidence exists. Cross-end implementation is strictly serial: the server identity, contract, rules, fixtures, simulator, and coexistence goal MUST complete before a client implementation goal is created. `READY_FOR_HANDOFF` authorizes the targeted sampling and detailed-planning stage only; it does not authorize implementation.
 
+#### Drop/Spin 咪牌替换的遮罩与列特效规则
+
+复刻客户端 Drop peeking、Spin peeking 咪牌特效时，计划和执行必须先确认目标 Reel 的真实可视边界，再替换 mask／clipping 与列特效。遮罩区域要与转盘的列、行、间距、anchor、scale 和坐标系吻合；每列特效要覆盖对应列并保持已证实的 sibling／layer／z-order，不得漏列、串列、越界覆盖相邻列，或遮挡不应被遮挡的 Reel、Symbol、UI。几何和覆盖关系只能由目标本地 Prefab／Scene、归档 JS 或 runtime 证据确定，并须在适用的 Drop、Spin、Turbo、急停路径复验；证据不足时保留 UNKNOWN 或对应 Gate。
+
 ### 8. Sample the competitor for both detailed plans
 
 After `doc/project_plan.md` has been generated and validated, read `references/detailed-plan-contract.md`. Derive separate client and server sampling checklists from the roadmap workstreams and acceptance matrix, then use `competitor-requirement-analysis` for a targeted live, read-only observation pass.
@@ -191,6 +196,8 @@ Only after the server goal is complete, create a new client goal and dispatch `s
 2. Implement the Reel/Spin/SlotReel portion of `project_plan.md` and `doc/s_init/client/detailed-replication-plan.md` through the formal `s_cli` `ROOT_CAUSE -> PLAN -> EXECUTE -> ACCEPT -> REPORT` loop. The five Reel modules, Reel core, Reel background, Drop peeking, Spin peeking, and Elimination, are separate implementation and acceptance entries; the GPT-6 thinking route must resolve each entry's VFX/effect, animation/timing, audio, callback, cleanup, evidence, and `{replicationId}_res` Prefab replacement decision before execution. Prefer a suitable target-local Prefab to replace the old Prefab, otherwise record the compatibility reason and preserve serialized bindings and `.meta` UUIDs. First copy or recapture the accepted server fixture into the target client's `doc/s_cli/**` evidence area and pass `serverDataCheck`; a runner path alone is not valid client evidence. `s_cli` must not start, stop, or modify the server.
 
 Complete the client goal only after identity residue checks, version 2 plan validation, static tests, relevant Cocos/MCP runtime checks, Reel behavior acceptance, and the required cross-end fixture replay pass. Report build, visual, deployment, and math evidence as separate outcomes.
+
+Before the client goal is complete, verify the LoadingPanel slice separately: the selected `{replicationId}_res/loading` image/SpriteFrame resolves in the AssetDB, the LoadingPanel loading-image node has a `cc.Sprite` component whose `spriteFrame` points to that resource, and the initial active/visibility state is preserved. Static binding integrity and runtime LoadingPanel visibility are separate acceptance outcomes; a missing or unsafe source/target remains a named Gate.
 
 ### 13. Report
 

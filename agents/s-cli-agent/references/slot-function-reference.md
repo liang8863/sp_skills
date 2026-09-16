@@ -21,9 +21,11 @@
   -> 在 doc/js_scripts 找需求对应脚本、fallback、callback 和清理调用链
   -> 记录 source -> target -> adaptation
   -> 本地证据完整：生成 version 2 计划
-  -> 任一固定路径缺失或行为证据不足：NEEDS_LOCAL_REFERENCE，停止实现
+  -> 必需的本地资源／脚本证据缺失或行为证据不足：NEEDS_LOCAL_REFERENCE，停止实现
   -> 实作后用同一触发输入做行为对照验收
 ```
+
+目标项目 `doc/**/*.png` 的默认角色是可选竞品图片／样式参考。文件存在时可用于比较构图、版式、颜色、比例和资源外观，并应在证据中标记为 optional visual/style reference；缺失、无法读取或覆盖不足时不得触发 `NEEDS_LOCAL_REFERENCE` 或任何其他退出／阻塞状态，也不能满足资源、脚本或协议证据的最低要求。PNG 不能单独证明玩法、协议、Symbol ID、payout、服务端语义、状态转移、动画／音频时序、callback、cleanup 或 runtime parity；这些结论仍需由目标资源、归档 JS、runtime 与 raw server contract 交叉确认。
 
 允许的差异仅限 Cocos 版本、Bridge/API、语言资源加载和目录结构等兼容适配；适配后可观察行为必须与已验证的本地竞品参考一致。通用速查、其他成品项目、未归档的外部工程和 Slot 经验都不能替代这三项本地证据。
 
@@ -73,6 +75,28 @@ Bootstrap / Loading
 模型列表示默认路由。只要涉及 Reel core、转盘背景、Spin 咪牌、掉落咪牌、消除、Reel/SlotReel 或其直接的 Free Game/Bonus 触发与转场接口，分析与计划统一使用 `gpt-6`；可选择模型标识时使用 `gpt-6-astra`。先输出五行模块编排表，再拆实现计划。其他需求默认使用 `terra`。
 
 转盘实现先检查目标项目 `assets/resources/{gameId}_res/` 下的现有 Prefab。每个模块必须写出“资源 Prefab -> 待替换旧 Prefab/owner -> 序列化绑定影响 -> 新 Prefab 属性/变换决定 -> 验收”：有匹配资源时优先经 Cocos-aware import/binding 使用它；新 Prefab 的序列化 position、rotation、scale、anchor、size、opacity、active 和 component default 是起点，不能为了沿用旧布局而复制旧 Prefab 属性。未调整时记录 `KEEP_RESOURCE_SERIALIZED: <本地证据>`；只有目标资源、归档 JS 或竞品 runtime 证据证明时，才记录 `ADJUST_FOR_COMPETITOR: <属性>=<值>; <证据>` 并调整。没有匹配资源或替换会破坏已证实的 binding 时，保留旧 Prefab 并写出本地证据理由。不得从同级游戏、`*_UI` 或外部资源工程补用 Prefab，也不得手改 UUID、`fileId`、`__id__`、脚本类型或动画/音频引用来伪造替换。
+
+### 消除特效层级速查
+
+消除特效复刻的层级规则：普通 Symbol 的节点／渲染层级必须高于消除特效层，消除特效不得覆盖未被消除的普通 Symbol。实现前检查目标资源 Prefab 的 sibling／layer／z-order，并在 runtime 验证实际遮挡关系；长 Symbol、固定 Symbol、Scatter 或保留 Overlay 只有在目标本地证据证明时才采用不同层级。
+
+### 消除 Symbol 动画速查
+
+被选中消除的 Symbol 一般应播放与其类型或资源对应的消除动画，例如 break 或 pop；动画的 owner、clip／Spine 状态、时序、音效和完成 callback 必须与目标本地证据一致。动画完成 callback 应参与清除屏障，之后才能改变 holder、启动 Drop 或补位；未被消除的普通 Symbol 仍不得被消除特效覆盖。若目标本地资源、归档 JS 或 runtime 证明没有动画或采用特殊路径，记录例外并保留 UNKNOWN 或对应 Gate。
+
+### Symbol 特殊属性编码速查
+
+服务器实现 Symbol 的长格、倍率等特殊属性时，应在服务器约定的编码 cell／symbol 值中明确表达，客户端只能按契约解码，不能根据画面或缺失字段猜测、补写属性。若目标游戏采用十进制位段编码，可按实际契约从低位向高位分配：个位和十位保存基础 Symbol ID，百位保存长格／占格数，千位保存倍率，更高位继续承载已验证的其他特殊属性；例如 `3201` 表示倍率 `3`、占 `2` 格、基础 Symbol `01`。`3201` 只是位段示例，不是所有游戏的固定协议；必须以目标游戏的规则、runner、客户端 mapper 和 round-trip 测试确认每个位段、默认值、续格标记、合法范围及冲突处理。
+
+### Spin 滚动状态速查
+
+Spin 滚动期间，Symbol 通常应保持进入滚动前的原有 ID、显示和特殊表现状态；只要仍在可视区内，就不得因开始 Spin、每个 tick、遮罩切换或换列而提前 reset。只有确认 Symbol 已越过可视边界并进入隐藏缓冲的回收／重用阶段后，才允许重置或写入下一状态。Turbo、急停和 Auto Spin 可以改变时长或跳过动画，但不能改变这个可视边界与 reset 时机；若目标项目证据证明不同，必须记录例外并按本地契约验收。
+
+### Drop/Spin 咪牌遮罩与列特效覆盖速查
+
+复刻或替换 Drop peeking、Spin peeking 咪牌特效时，遮罩／裁剪区域必须与目标 Reel 的实际可视边界吻合，包括列数、行数、间距、anchor、scale 及坐标系；不得直接沿用旧特效、donor 或父节点的整盘范围。每列特效必须覆盖其目标列，并保持已证实的 sibling／layer／z-order；不得漏列、串列、越界覆盖相邻列，或遮挡不应被遮挡的 Reel、Symbol 和 UI。实现前先以目标本地 Prefab／Scene、归档 JS 或 runtime 证据确认，替换后在适用的正常 Spin、Drop peeking、Spin peeking、Turbo／急停场景验证遮罩边界和列覆盖；无证据时保留 UNKNOWN 或对应 Gate。
+
+Spin 咪牌列特效的默认层级顺序为 背景层 < Spin 咪牌列特效层 < Symbol 层：列特效应位于转盘背景之上、普通 Symbol 之下，只覆盖目标列，不得遮挡 Symbol。实现前后记录目标资源与 runtime 的 sibling／layer／z-order；若本地证据证明不同，必须记录明确例外。
 
 ## 三、按需功能切片
 

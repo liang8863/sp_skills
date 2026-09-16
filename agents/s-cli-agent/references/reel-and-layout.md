@@ -1,4 +1,4 @@
-﻿### 3.4 Reel / SlotReel / 布局
+### 3.4 Reel / SlotReel / 布局
 
 本文件只提供 Reel 取证问题、边界检查和验收维度。下面的术语与流程用于建立假设并寻找证据，不是目标游戏的默认规则；实际列数、行数、阈值、索引、停轮顺序、咪牌、slow-drop、动画和 callback 必须由目标项目的 `{gameId}_res`、`doc/js_scripts` 与协议/运行时证据共同确认。`doc/project_info.md` 只确认 gameId 与竞品网址身份，不是外部取证入口。
 
@@ -21,11 +21,17 @@
 | Reel background | normal、spin、Spin 咪牌、Drop 咪牌、消除/Cascade、FG/Bonus 等实际存在状态的背景层级、遮罩和前后景归属 | 先查找目标资源的 background、foreground、mask、ambient 或状态控制 Prefab；记录替换后的层级、Scene 引用和旧 controller 退出责任。背景节点的 position、opacity、active 和 layer 顺序从资源 Prefab 起算，不从旧 controller 或旧 Prefab 复制 | 每个状态的背景 effect/Spine/clip、转场时点、loop/one-shot 音效或 BGM 调整、接管 callback 和恢复 normal/FG 背景的 cleanup | 不遮挡 Reel/Overlay；状态切换只发生一次；下一阶段或中断后背景、透明度、层级和音频恢复 |
 | Drop peeking | 清除后残留 `R`、待落地 `landed`、slow-drop 门槛、逐列/逐格落地和 FG 达成 guard | 先查找目标资源的 slow-drop、Scatter overlay、mask、light column 或音效 holder Prefab；记录旧 overlay/holder 的替换和跨 Cascade 保留规则。新 overlay 的 transform、active 和 component defaults 保留资源值，除非本地竞品证据证明落点或层级需要调整 | 残留 Scatter 高亮、遮罩/光柱、心跳、riser、落地效果、BGM fade、每颗新 Scatter 的 callback、`AllDropOver` 前的幂等清理 | pending 新牌不提前计数或显现；最晚一列真实完成前不推进；达成与退场各一次 |
 | Spin peeking | 已停列 `seen(i)`、`startPeekingIndex`、目标列、ONE_MORE、最终 Scatter/FG 达成与最后一列退出 | 先查找目标资源的 peeking、Scatter、mask、camera/light 或提示 Prefab；记录目标列绑定、旧慢转/提示 owner 和正常停轮复原点。新提示件的位置、scale、anchor、active 和 camera/light defaults 不复制旧值；调整必须由目标本地证据支持 | 目标列慢转、已有 Scatter 高亮、遮罩/镜头、riser/heartbeat、停轮和 Scatter 出现效果、逐列 callback、结束时恢复 BGM/层级 | 不读取完整结果预判；目标只前进一次；最后停轮、急停/Turbo/Auto 与下一阶段无残留 |
-| Elimination | 当前帧可消除格、Win/cluster/ways 数据、长符号/固定符号/Overlay 排除规则、清除到补位的完成屏障 | 先查找目标资源的 break/pop、symbol holder、pooled item 或保留 Overlay Prefab；记录旧 clone/holder 的替换、回收 owner 和 target override 影响。新 break/pop、holder 或 overlay 的 transform、opacity、active 和 component defaults 以资源值为准，不能从旧 clone 迁移 | 被清除符号的 VFX、break/pop/消失动画、音效、每格或每批 callback、在 Drop 前销毁/回收 holder 与 Overlay 的顺序 | 只消除本帧真实目标；不误删长符号、固定符号或保留 Overlay；所有清除完成后才开始掉落 |
+| Elimination | 当前帧可消除格、Win/cluster/ways 数据、长符号/固定符号/Overlay 排除规则、清除到补位的完成屏障与显示层级 | 先查找目标资源的 break/pop、symbol holder、pooled item 或保留 Overlay Prefab；记录旧 clone/holder 的替换、回收 owner、target override 与 sibling/layer/z-order 影响。普通 Symbol 的节点／渲染层级必须高于消除特效层；只有目标本地证据证明长符号、固定符号、Scatter 或保留 Overlay 需要例外时才调整。新 break/pop、holder 或 overlay 的 transform、opacity、active 和 component defaults 以资源值为准，不能从旧 clone 迁移 | 被清除符号的 VFX、break/pop/消失动画、音效、每格或每批 callback、普通 Symbol 与消除特效的遮挡关系、在 Drop 前销毁/回收 holder 与 Overlay 的顺序 | 只消除本帧真实目标；未被消除的普通 Symbol 不被消除特效覆盖；不误删长符号、固定符号或保留 Overlay；所有清除完成后才开始掉落 |
 
 同一行内的 VFX、动画、音效和 callback 必须来自同一条已证实的状态链，并且具有同一清理责任。资源名、动画名或单张截图不能单独证明整条链；缺少其中任一项时记录 `UNKNOWN` 或对应 Gate，不能用另一款游戏或速查表默认值补齐。
 
-资源 Prefab 替换按以下顺序执行：先在目标 `assets/resources/{gameId}_res/` 中定位普通文件和对应 `.meta`，再对照旧 Prefab 的节点、组件、`@property`、target override、动画/Spine/Audio 引用和现有消费者；旧件只用于判断 owner、消费方和绑定风险。确认后通过 Cocos-aware import/binding 将目标资源接入，并以新 Prefab 的序列化属性为默认值，包含 position、rotation、scale、anchor、size、opacity、active 和 component defaults。不得将旧 Prefab 的任何属性复制到新 Prefab 来维持旧布局；无调整时记录 `KEEP_RESOURCE_SERIALIZED: <本地证据>`，仅在目标 `{gameId}_res`、`doc/js_scripts` 或 runtime 竞品证据证明时，以 `ADJUST_FOR_COMPETITOR: <属性>=<值>; <证据>` 调整。不得复制同级游戏或外部工程的 Prefab，不得用手改 UUID、`fileId`、`__id__` 取代绑定验证。资源根缺失、没有匹配 Prefab 或发现绑定冲突时，保留旧件并记录 `NO_RESOURCE_PREFAB`、`RETAIN_LEGACY` 或对应 Gate。
+资源 Prefab 替换按以下顺序执行：先在目标 `assets/resources/{gameId}_res/` 中定位普通文件和对应 `.meta`，再对照旧 Prefab 的节点、组件、`@property`、target override、动画/Spine/Audio 引用和现有消费者；旧件只用于判断 owner、消费方和绑定风险。确认后通过 Cocos-aware import/binding 将目标资源接入，并以新 Prefab 的序列化属性为默认值，包含 position、rotation、scale、anchor、size、opacity、active 和 component defaults。不得将旧 Prefab 的任何属性复制到新 Prefab 来维持旧布局；无调整时记录 `KEEP_RESOURCE_SERIALIZED: <本地证据>`，仅在目标 `{gameId}_res` 或 `doc/js_scripts` 证据证明时（调整后在目标 runtime 验证，不使用竞品 URL 做视觉验收），以 `ADJUST_FOR_COMPETITOR: <属性>=<值>; <证据>` 调整。不得复制同级游戏或外部工程的 Prefab，不得用手改 UUID、`fileId`、`__id__` 取代绑定验证。资源根缺失、没有匹配 Prefab 或发现绑定冲突时，保留旧件并记录 `NO_RESOURCE_PREFAB`、`RETAIN_LEGACY` 或对应 Gate。
+
+**Spin 滚动状态规则**：滚动期间，Symbol 通常保持进入 Spin 前的原有 ID、显示和特殊表现状态；只要仍在可视区内，不得因开始 Spin、每个 tick、遮罩切换或换列而提前 reset。只有确认 Symbol 越过可视边界并进入隐藏缓冲的回收／重用阶段后，才允许重置或写入下一状态。Turbo、急停和 Auto Spin 可以改变时长或跳过动画，但不能改变可视边界与 reset 时机；目标项目若有相反证据，必须记录例外并在 runtime 验证。
+
+**Drop/Spin 咪牌遮罩与列特效规则**：替换 Drop peeking、Spin peeking 特效时，mask／clipping 必须对齐目标 Reel 的实际可视区域（列、行、间距、anchor、scale 与坐标系），不能直接复制旧件或父节点的整盘范围。列特效要按目标列保持完整覆盖及已证实的 sibling／layer／z-order，不得漏列、串列、越界覆盖相邻列，或遮挡不应被遮挡的 Reel、Symbol、UI；这些边界必须由目标本地 Prefab／Scene、归档 JS 或 runtime 证据确认并在适用场景复验。
+
+Spin 咪牌列特效默认采用 转盘背景 < Spin 咪牌列特效 < Symbol 的层级顺序：特效在背景上、普通 Symbol 下，只覆盖对应目标列，不得覆盖 Symbol。验收需记录背景、列特效与 Symbol 的 sibling／layer／z-order 及逐列覆盖结果；不同顺序必须有目标本地证据支持并记录例外。
 
 #### 3.4.2 咪牌判定术语
 
@@ -50,7 +56,7 @@
 | 阶段 | 必须处理的逻辑 | 可观察结果 |
 | --- | --- | --- |
 | 1. 接收结果 | 保存本轮结果，拆成各列可见布局；重置每列 Scatter 快照、咪牌、Free Spin Won、音频和遮罩状态 | 新 Spin 不继承上一轮状态 |
-| 2. 开始转动 | 各列进入 spinning；Turbo/急停只能改变节奏，不能改变判定所使用的结果 | Reel 状态和 Spin 状态一致 |
+| 2. 开始转动 | 各列进入 spinning；可视区内 Symbol 保持原有 ID、显示和特殊状态，直到越过可视边界进入回收／重用阶段才 reset；Turbo/急停只能改变节奏，不能改变判定所使用的结果或 reset 时机 | Reel 状态和 Spin 状态一致，无可视区内提前清空或换成默认 Symbol |
 | 3. 单列停轮 | 只累计已停列的可见 Scatter，得到 `seen(i)`；不能直接读取完整结果总数提前判定 | 日志可对出 `reelIndex`、本列数量和累计数量 |
 | 4. 判定达成 | 若 `seen(i) >= T`，立即且只触发一次 Free Spin Won；即使同列从 `T-2` 跳到 `T+1` 也不能漏触发 | InfoBoard/Scatter 庆祝和后续 FG 入场状态一致 |
 | 5. 开始咪牌 | 未达成且达到 one-more 条件，并且仍有下一列时，目标切到下一列：慢转/光柱、盘面压暗、已有 Scatter 高亮、镜头、riser/heartbeat、ONE_MORE_SCATTER 按项目规则启动 | 咪牌目标列与 `startPeekingIndex` 一致，不提前照亮后续列 |
@@ -98,6 +104,8 @@
 
 **消除**在 Drop 之前建立当前帧的目标快照。将每个待清除位置从协议/表现数据映射为 `(reelIndex, positionIndex, resultValue)` 或目标项目等价键，并先排除长符号、固定/Sticky 符号、保留的 Scatter/Bonus Overlay 和非 Symbol 特效。按目标证据指定逐格或逐批顺序播放 break/pop VFX、动画和音效；完成 callback 必须形成清除屏障，之后才能改变 holder、启动重力补位或进入 Drop。异常中断、新 Spin、Turbo、销毁时取消 tween/listener 并释放管理的 clone/overlay，不能清除下一个结果或上一轮仍需保留的对象。
 
+**消除 Symbol 动画规则**：被选中消除的 Symbol 一般播放与其类型或资源对应的 break／pop 等消除动画；动画 owner、clip／Spine 状态、时序、音效和完成 callback 必须由目标本地资源、归档 JS 或 runtime 证据确认。动画完成 callback 参与清除屏障，之后才能改变 holder、启动 Drop 或补位；普通 Symbol 的节点／渲染层级仍必须高于消除特效层，未被消除的普通 Symbol 不得被特效覆盖。目标有无动画或特殊路径时，记录例外并保留 UNKNOWN 或对应 Gate。
+
 #### 3.4.6 目标项目本地证据矩阵
 
 逐行填写目标项目的真实路径与结论。资源和旧脚本只能互相补强，不能互相替代；任何会影响实现的空白或矛盾都标记为 `UNKNOWN`，并停止为 `NEEDS_LOCAL_REFERENCE`。
@@ -124,6 +132,7 @@
 | SPIN-05 | 同一列出现多个 Scatter，使累计从 `<T` 跳到 `>T` | 使用 `>=T` 仍能达成；音效、镜头和 InfoBoard 不重复播放 |
 | SPIN-06 | 未进入咪牌，但某列/最后一列一次达到 `T` | 仍能触发 Free Spin Won；`startPeekingIndex` 不能成为 FG 判定前置条件 |
 | SPIN-07 | 对 SPIN-02 至 SPIN-06 分别执行 Turbo、急停和 Auto Spin | 结果、触发次数和最终状态相同；只允许时长不同 |
+| REEL-01 | Spin 滚动中观察仍在可视区内的 Symbol，以及刚越过可视边界的 Symbol | 可视区内保持原有 ID、显示和特殊状态；越过边界进入回收／重用后才 reset；无提前清空、闪烁或默认 Symbol 替换 |
 | DROP-01 | 清除后 `R` 小于 slow-drop 门槛 | 走普通掉落，不出现 slow-drop 遮罩、心跳或 ONE_MORE |
 | DROP-02 | 清除后恰好 `R == T-1`，新牌尚未释放 | 只高亮残留 Scatter；pending 新 Scatter 不得提前出现或计数，旧符号先补位 |
 | DROP-03 | `R == T-1`，新牌全部落地后仍 `<T` | 等最后一颗预期新牌落地才结束；恢复 BGM/遮罩/特效并继续正常结算 |
@@ -133,7 +142,7 @@
 | DROP-07 | 连续两次 Cascade 都满足 slow-drop 条件 | 按项目规则验证每 Cascade 或每 Spin 的去重范围；计数、token、callback 不串轮 |
 | BG-01 | normal -> Spin -> Spin 咪牌 -> normal，或目标项目已证实的同类链路 | 背景 VFX/动画/音效与 callback 按本地状态链切换；不遮挡 Reel，退出后背景和 loop 音效恢复 |
 | BG-02 | Drop 咪牌、Cascade 或 FG 接管期间急停/新 Spin/销毁 | 背景 tween、遮罩、层级、BGM/loop 和 callback 幂等恢复，无串轮残留 |
-| ELIM-01 | 同时存在普通中奖格、长符号/固定符号和需保留 Overlay | 只消除当前帧目标；VFX/动画/音效按证据顺序执行，排除对象完整保留 |
+| ELIM-01 | 同时存在普通中奖格、长符号/固定符号和需保留 Overlay | 只消除当前帧目标；普通 Symbol 位于消除特效层之上且未被特效遮挡；VFX/动画/音效按证据顺序执行，排除对象完整保留 |
 | ELIM-02 | 多批消除且最后一批延迟完成 | 最后一个清除 callback 前不进入 Drop；完成后 holder/clone/overlay 清理正确 |
 | BOUNDARY-01 | Scatter 位于每列最上/最下可见格、隐藏缓冲、首个 compact index | 只统计可见格；坐标、遮罩和特效都落在正确 Reel/row |
 | CLEANUP-01 | 咪牌中急停、切 Turbo、开始新 Spin、退出 FG 或销毁节点 | 循环音效、BGM fade、mask、overlay、camera、tween/schedule 和完成 callback 全部恢复且可重复调用 |

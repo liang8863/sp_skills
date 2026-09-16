@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $trialLabel = -join @([char]0x8BD5, [char]0x73A9, [char]0x7248)
+$formalLabel = -join @([char]0x6B63, [char]0x5F0F, [char]0x7248)
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $validator = Join-Path $scriptRoot 'validate-scheme-structure.ps1'
 $hostExecutable = (Get-Process -Id $PID).Path
@@ -29,8 +30,8 @@ function Invoke-GitOrThrow([string[]]$Arguments, [string]$FailureMessage) {
     }
 }
 
-function Invoke-Validator {
-    $output = @(& $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -RunnerPath $runnerPath 2>&1)
+function Invoke-Validator([string]$ReferenceEdition = 'Trial') {
+    $output = @(& $hostExecutable -NoProfile -ExecutionPolicy Bypass -File $validator -RunnerPath $runnerPath -ReferenceEdition $ReferenceEdition 2>&1)
     $exitCode = $LASTEXITCODE
     $text = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
     $json = $null
@@ -49,6 +50,9 @@ try {
     Invoke-GitOrThrow @('init', '--bare', '--', $remotePath) 'failed to initialize bare scheme remote'
     Invoke-GitOrThrow @('init', '--', $seedRepository) 'failed to initialize scheme seed repository'
     [IO.File]::WriteAllText($seedReferencePath, '{"id":1,"config":{"0":{"id":0,"weight":10}},"flags":[true,"x",1]}')
+    $seedFormalRoot = Join-Path $seedRepository ($formalLabel + 'json')
+    [void](New-Item -ItemType Directory -Force $seedFormalRoot)
+    [IO.File]::WriteAllText((Join-Path $seedFormalRoot ('ABC_Test_' + $formalLabel + '.json')), '{"id":1,"config":{"0":{"id":0,"weight":10}},"flags":[true,"x",1]}')
     Invoke-GitOrThrow @('-C', $seedRepository, 'add', '--', '.') 'failed to stage initial scheme reference fixture'
     Invoke-GitOrThrow @('-C', $seedRepository, '-c', 'user.name=CodexTest', '-c', 'user.email=codex-test@example.invalid', 'commit', '-m', 'initial reference') 'failed to commit initial scheme reference fixture'
     Invoke-GitOrThrow @('-C', $seedRepository, 'branch', '-M', 'main') 'failed to name fixture branch'
@@ -74,6 +78,12 @@ try {
         throw "matching structure did not report comparison mode. Output: $($valid.Text)"
     }
 
+    if ($valid.Json.referenceEdition -ne 'Trial' -or
+        $valid.Json.mathematicalSemanticsValidated -ne $false -or
+        $valid.Json.runtimeConsumptionValidated -ne $false) {
+        throw 'structure validation must identify its edition and evidence limits'
+    }
+
     Remove-Item -LiteralPath $schemePath -Force
     $referenceFallback = Invoke-Validator
     Assert-Result $referenceFallback 0 'VALID' 'missing local scheme reference fallback'
@@ -83,6 +93,13 @@ try {
         $referenceFallback.Json.schemeSource -ne 'slot-rtp-scheme' -or
         $referenceFallback.Json.effectiveSchemePath -ne $referenceFallback.Json.referencePath) {
         throw "missing local scheme did not use the reference fallback. Output: $($referenceFallback.Text)"
+    }
+    $formalFallback = Invoke-Validator 'Formal'
+    Assert-Result $formalFallback 0 'VALID' 'formal reference fallback'
+    if ($formalFallback.Json.referenceEdition -ne 'Formal' -or
+        $formalFallback.Json.referencePath -eq $referenceFallback.Json.referencePath -or
+        $formalFallback.Json.validationMode -ne 'REFERENCE_FALLBACK') {
+        throw 'explicit Formal choice did not select the formal reference'
     }
     if (Test-Path -LiteralPath $schemePath) {
         throw 'reference fallback unexpectedly created runner scheme.json'
@@ -107,6 +124,13 @@ try {
     $missingReference = Invoke-Validator
     Assert-Result $missingReference 1 'NEEDS_SCHEME_REFERENCE_DECISION' 'missing reference after pull'
 
+    [IO.File]::WriteAllText($schemePath, '{"id":1,"config":{"0":{"id":0,"weight":10}},"flags":[true,"x",1]}')
+    $formalWithoutTrial = Invoke-Validator 'Formal'
+    Assert-Result $formalWithoutTrial 0 'VALID' 'formal reference works when trial is absent'
+    if ($formalWithoutTrial.Json.validationMode -ne 'STRUCTURE_COMPARISON') {
+        throw 'formal reference did not compare a present runner scheme'
+    }
+
     [IO.File]::WriteAllText((Join-Path $schemeRepository 'local-edit.txt'), 'must block sync')
     $dirtyReferenceRepository = Invoke-Validator
     Assert-Result $dirtyReferenceRepository 1 'NEEDS_SCHEME_SYNC_DECISION' 'dirty reference repository'
@@ -120,7 +144,13 @@ try {
 
 } finally {
     if (Test-Path -LiteralPath $testRoot) {
-        Remove-Item -LiteralPath $testRoot -Recurse -Force
+        $resolvedTestRoot = [IO.Path]::GetFullPath($testRoot)
+        $resolvedTempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+        if (-not $resolvedTestRoot.StartsWith($resolvedTempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+            (Split-Path -Leaf $resolvedTestRoot) -notlike 's-ser-scheme-test-*') {
+            throw "refusing cleanup outside the task fixture root: $resolvedTestRoot"
+        }
+        Remove-Item -LiteralPath $resolvedTestRoot -Recurse -Force
     }
 }
 

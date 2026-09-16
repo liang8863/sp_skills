@@ -13,6 +13,7 @@ $testReplicationId = 'sclivalidator{0}' -f ([guid]::NewGuid().ToString('N'))
 $testProjectName = "slot-fe-$testReplicationId"
 $testProject = Join-Path $gamesRoot $testProjectName
 $defaultMetadataGameId = 'provider_102'
+$createdOriginalProjects = [System.Collections.Generic.List[string]]::new()
 
 function Get-CanonicalPath([string]$Path) {
     return ([IO.Path]::GetFullPath($Path)).TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
@@ -44,7 +45,7 @@ function Invoke-PlanValidator([string]$Path, [switch]$SkipPathChecks, [switch]$A
     $previousErrorAction = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
-        $output = (& $hostExecutable @arguments 2>&1 | Out-String)
+        $output = (& $hostExecutable @arguments 2>&1 | Out-String -Width 4096)
         $exitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorAction
@@ -143,9 +144,19 @@ function New-LocalFixture(
     $plan.localReference.replicationId = $testReplicationId
     $plan.localReference.metadataGameId = $ProjectInfoGameId
     $plan.localReference.resourceRoot = "assets/resources/$($testReplicationId)_res"
-    $plan.localReference.evidence[0].source = 'doc/js_scripts/SourceController.js#method'
-    $plan.localReference.evidence[1].source = "assets/resources/$($testReplicationId)_res/feature.prefab"
-    $plan.localReference.evidence[1].target = "assets/resources/$($testReplicationId)_res/feature.prefab"
+    $plan.localReference.originalProject.gameId = $testReplicationId
+    $plan.localReference.originalProject.root = "CC3Proj/${testReplicationId}_UI"
+    $plan.localReference.evidence[0].source = "assets/resources/$($testReplicationId)_res/feature.prefab"
+    $plan.localReference.evidence[0].target = "assets/resources/$($testReplicationId)_res/feature.prefab"
+    $resourceEvidence = $plan.localReference.evidence[0]
+    $legacyScriptEvidence = [pscustomobject]@{
+        kind = 'legacy-script'
+        source = 'doc/js_scripts/SourceController.js#method'
+        target = 'assets/scripts/TargetController.ts#method'
+        behavior = 'Observable competitor behavior archived in the target project'
+        adaptation = 'Compatibility mapping without behavior changes'
+    }
+    $plan.localReference.evidence = @($legacyScriptEvidence, $resourceEvidence)
     return [pscustomobject]@{
         Plan = $plan
         PlanPath = Join-Path $testProject "doc\s_cli\$taskId\plan.json"
@@ -242,7 +253,52 @@ try {
     Assert-Invalid (Save-And-Validate $emptyResource) 'empty resource root' 'Local competitor resource directory is empty'
 
     $missingScripts = New-LocalFixture 'missing-scripts' -MissingScripts
-    Assert-Invalid (Save-And-Validate $missingScripts) 'missing scripts root' 'Local competitor script directory does not exist'
+    $missingScripts.Plan.localReference.evidence = @($missingScripts.Plan.localReference.evidence[1])
+    Assert-Valid (Save-And-Validate $missingScripts) 'missing optional scripts root without legacy-script evidence'
+
+    $missingOriginalProject = New-LocalFixture 'missing-original-project' -ProjectInfoGameId ('provider_' + [guid]::NewGuid().ToString('N'))
+    $missingOriginalProject.Plan.localReference.originalProject.status = 'NOT_FOUND_IGNORED'
+    Assert-Valid (Save-And-Validate $missingOriginalProject) 'missing optional original project is ignored'
+
+    $originalProjectFixture = New-LocalFixture 'original-project-reference' -ProjectInfoGameId ('provider_' + [guid]::NewGuid().ToString('N'))
+    $originalProjectRoot = Join-Path $gamesRoot "CC3Proj\${testReplicationId}_UI"
+    $createdOriginalProjects.Add($originalProjectRoot)
+    New-Item -ItemType Directory -Path (Join-Path $originalProjectRoot 'assets') -Force | Out-Null
+    '{}' | Set-Content -LiteralPath (Join-Path $originalProjectRoot 'assets\OriginalController.js') -Encoding UTF8
+    $originalProjectFixture.Plan.localReference.originalProject.status = 'FOUND'
+    $originalProjectFixture.Plan.localReference.evidence = @(
+        $originalProjectFixture.Plan.localReference.evidence[1],
+        [pscustomobject]@{
+            kind = 'original-project'
+            source = "CC3Proj/${testReplicationId}_UI/assets/OriginalController.js#method"
+            target = 'assets/scripts/TargetController.ts#method'
+            behavior = 'Original project code and resource state'
+            adaptation = 'Use as read-only reference; preserve target bindings'
+        }
+    )
+    Assert-Valid (Save-And-Validate $originalProjectFixture) 'existing optional original project evidence'
+
+    $invalidOriginalProject = New-LocalFixture 'invalid-original-project-reference' -ProjectInfoGameId $originalProjectGameId
+    $invalidOriginalProject.Plan.localReference.evidence = @(
+        $invalidOriginalProject.Plan.localReference.evidence[1],
+        [pscustomobject]@{
+            kind = 'original-project'
+            source = 'CC3Proj/other_UI/assets/OriginalController.js#method'
+            target = 'assets/scripts/TargetController.ts#method'
+            behavior = 'Mismatched original project'
+            adaptation = 'Reject unrelated source'
+        }
+    )
+    Assert-Invalid (Save-And-Validate $invalidOriginalProject) 'mismatched optional original project evidence' 'Original-project evidence must be under'
+
+    $missingRequiredScripts = New-LocalFixture 'missing-required-scripts' -MissingScripts
+    Assert-Invalid (Save-And-Validate $missingRequiredScripts) 'missing scripts root required by legacy-script evidence' 'required by legacy-script evidence does not exist'
+
+    $emptyScripts = New-LocalFixture 'empty-scripts'
+    $emptyScripts.Plan.localReference.evidence = @($emptyScripts.Plan.localReference.evidence[1])
+    Remove-Item -LiteralPath (Join-Path $testProject 'doc\js_scripts\SourceController.js') -Force
+    Remove-Item -LiteralPath (Join-Path $testProject 'doc\js_scripts\SourceController.js.meta') -Force
+    Assert-Valid (Save-And-Validate $emptyScripts) 'empty optional scripts root without legacy-script evidence'
 
     $missingProjectInfo = New-LocalFixture 'missing-project-info' -MissingProjectInfo
     Assert-Invalid (Save-And-Validate $missingProjectInfo) 'missing project info' 'Local project info file does not exist'
@@ -318,7 +374,7 @@ try {
     try {
         New-Item -ItemType Junction -Path $scriptsLink -Target $scriptsLinkTarget -Force | Out-Null
         $scriptsLinkCreated = $true
-        Assert-Invalid (Save-And-Validate $scriptsReparse) 'nested scripts reparse' 'script directory cannot contain a reparse point'
+        Assert-Invalid (Save-And-Validate $scriptsReparse) 'nested scripts reparse' 'required by legacy-script evidence cannot contain a reparse point'
     } catch {
         if ($scriptsLinkCreated) { throw }
         Write-Output "SKIP: nested scripts reparse test unavailable: $($_.Exception.Message)"
@@ -415,7 +471,7 @@ try {
 
     $missingLegacyEvidence = New-LocalFixture 'missing-legacy-evidence'
     $missingLegacyEvidence.Plan.localReference.evidence = @($missingLegacyEvidence.Plan.localReference.evidence[1])
-    Assert-Invalid (Save-And-Validate $missingLegacyEvidence) 'missing legacy-script behavior evidence' 'must contain at least one legacy-script behavior evidence item'
+    Assert-Valid (Save-And-Validate $missingLegacyEvidence) 'resource-only behavior evidence'
 
     foreach ($readOnlyPath in @('doc/js_scripts/SourceController.js', 'doc/project_info.md', 'assets/scripts/bridge/LinkedController.ts')) {
         $readOnly = New-LocalFixture ('readonly-' + ($readOnlyPath -replace '[^A-Za-z0-9]', '-'))
@@ -495,6 +551,11 @@ try {
     Assert-SafeTestProject
     if (Test-Path -LiteralPath $testProject) {
         Remove-Item -LiteralPath $testProject -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    foreach ($originalProjectPath in $createdOriginalProjects) {
+        if (Test-Path -LiteralPath $originalProjectPath) {
+            Remove-Item -LiteralPath $originalProjectPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
